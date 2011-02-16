@@ -4,10 +4,8 @@
 #include "stdafx.h"
 #include "I4C3D.h"
 #include "I4C3DCore.h"
+#include "I4C3DCommandPool.h"
 #include "I4C3DCommand.h"
-#include "I4C3DTumbleCommand.h"
-#include "I4C3DTrackCommand.h"
-#include "I4C3DDollyCommand.h"
 
 #define MAX_LOADSTRING 100
 
@@ -15,6 +13,8 @@
 HINSTANCE hInst;								// 現在のインターフェイス
 TCHAR szTitle[MAX_LOADSTRING];					// タイトル バーのテキスト
 TCHAR szWindowClass[MAX_LOADSTRING];			// メイン ウィンドウ クラス名
+
+static I4C3DCommandPool g_hCommandPool;
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -142,15 +142,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc;
 	static I4C3DCore core;
+	static HWND hWnd3DSoftware;
+	I4C3DCommand* command;
 
 	switch (message)
 	{
 	case WM_CREATE:
-		core.Start();
+		if (!core.Start(&hWnd3DSoftware)) {
+		}
+
 		break;
 
 	case WM_BRIDGEMESSAGE:
-
+		// WPARAM: HIWORD(wParam)	-> x座標  LOWORD(wParam) -> y座標
+		// LPARAM: (LPCTSTR)lParam	-> コマンド名(tumble, dollyなど)
+		command = g_hCommandPool.GetCommand((LPCTSTR)lParam);
+		command->SetParameter(hWnd3DSoftware, HIWORD(wParam), LOWORD(wParam));
+		command->Execute();
 		break;
 
 	case WM_COMMAND:

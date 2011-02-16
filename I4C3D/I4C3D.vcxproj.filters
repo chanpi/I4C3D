@@ -57,6 +57,12 @@
     <ClInclude Include="I4C3DDollyCommand.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="I4C3DMisc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="I4C3DCommandPool.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -81,6 +87,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="I4C3DDollyCommand.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="I4C3DMisc.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="I4C3DCommandPool.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

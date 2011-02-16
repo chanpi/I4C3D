@@ -81,8 +81,10 @@
     <ClInclude Include="I4C3D.h" />
     <ClInclude Include="I4C3DAccessor.h" />
     <ClInclude Include="I4C3DCommand.h" />
+    <ClInclude Include="I4C3DCommandPool.h" />
     <ClInclude Include="I4C3DCore.h" />
     <ClInclude Include="I4C3DDollyCommand.h" />
+    <ClInclude Include="I4C3DMisc.h" />
     <ClInclude Include="I4C3DTrackCommand.h" />
     <ClInclude Include="I4C3DTumbleCommand.h" />
     <ClInclude Include="Resource.h" />
@@ -93,8 +95,10 @@
     <ClCompile Include="I4C3D.cpp" />
     <ClCompile Include="I4C3DAccessor.cpp" />
     <ClCompile Include="I4C3DCommand.cpp" />
+    <ClCompile Include="I4C3DCommandPool.cpp" />
     <ClCompile Include="I4C3DCore.cpp" />
     <ClCompile Include="I4C3DDollyCommand.cpp" />
+    <ClCompile Include="I4C3DMisc.cpp" />
     <ClCompile Include="I4C3DTrackCommand.cpp" />
     <ClCompile Include="I4C3DTumbleCommand.cpp" />
     <ClCompile Include="stdafx.cpp">
