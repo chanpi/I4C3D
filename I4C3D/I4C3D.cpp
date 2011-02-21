@@ -3,18 +3,17 @@
 
 #include "stdafx.h"
 #include "I4C3D.h"
+#include "I4C3DMisc.h"
 #include "I4C3DCore.h"
-#include "I4C3DCommandPool.h"
-#include "I4C3DCommand.h"
-
-#define MAX_LOADSTRING 100
+#include "I4C3DControl.h"
+#include "I4C3DRTTControl.h"
+#include "I4C3DMAYAControl.h"
+#include "I4C3DAliasControl.h"
 
 // グローバル変数:
 HINSTANCE hInst;								// 現在のインターフェイス
 TCHAR szTitle[MAX_LOADSTRING];					// タイトル バーのテキスト
 TCHAR szWindowClass[MAX_LOADSTRING];			// メイン ウィンドウ クラス名
-
-static I4C3DCommandPool g_hCommandPool;
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -30,9 +29,31 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
- 	// TODO: ここにコードを挿入してください。
+	I4C3DMisc misc;
+	WSADATA wsaData;
+	WORD wVersion = MAKEWORD(2,2);
+	int nResult;
 	MSG msg;
 	HACCEL hAccelTable;
+
+	// 二重起動防止
+	if (!misc.ExecuteOnce()) {
+		misc.Cleanup();
+		return EXIT_FAILURE;
+	}
+
+	nResult = WSAStartup(wVersion, &wsaData);
+	if (nResult != 0) {
+		I4C3DMisc::ReportError(_T("[ERROR] Initialize Winsock."));
+		misc.Cleanup();
+		return EXIT_FAILURE;
+	}
+	if (wsaData.wVersion != wVersion) {
+		I4C3DMisc::ReportError(TEXT("[ERROR] Winsock バージョン."));
+		WSACleanup();
+		misc.Cleanup();
+		return EXIT_FAILURE;
+	}
 
 	// グローバル文字列を初期化しています。
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -42,6 +63,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	// アプリケーションの初期化を実行します:
 	if (!InitInstance (hInstance, nCmdShow))
 	{
+		WSACleanup();
+		misc.Cleanup();
 		return FALSE;
 	}
 
@@ -57,9 +80,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
+	WSACleanup();
+	misc.Cleanup();
+
 	return (int) msg.wParam;
 }
-
 
 
 //
@@ -141,24 +166,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
+	HWND hWnd3DSoftware;
+
+	static I4C3DContext context = {0};
 	static I4C3DCore core;
-	static HWND hWnd3DSoftware;
-	I4C3DCommand* command;
+	static I4C3DControl* controller = NULL;
 
 	switch (message)
 	{
 	case WM_CREATE:
 		if (!core.Start(&hWnd3DSoftware)) {
-		}
+		} else {
+			// メニュー項目　有効にする
 
+			// コントローラを生成
+			TCHAR szSoftwareName[MAX_PATH];
+			core.GetTarget3DSoftwareName(szSoftwareName, sizeof(szSoftwareName)/sizeof(szSoftwareName[0]));
+			if (lstrcmpi(szSoftwareName, _T("RTT")) == 0) {
+				controller = new I4C3DRTTControl(hWnd3DSoftware);
+			} else if (lstrcmpi(szSoftwareName, _T("MAYA")) == 0) {
+				controller = new I4C3DMAYAControl(hWnd3DSoftware);
+			} else if (lstrcmpi(szSoftwareName, _T("Alias")) == 0) {
+				controller = new I4C3DAliasControl(hWnd3DSoftware);
+			}
+		}
 		break;
 
 	case WM_BRIDGEMESSAGE:
-		// WPARAM: HIWORD(wParam)	-> x座標  LOWORD(wParam) -> y座標
+		// WPARAM: HIWORD(wParam)	-> y座標  LOWORD(wParam) -> x座標
 		// LPARAM: (LPCTSTR)lParam	-> コマンド名(tumble, dollyなど)
-		command = g_hCommandPool.GetCommand((LPCTSTR)lParam);
-		command->SetParameter(hWnd3DSoftware, HIWORD(wParam), LOWORD(wParam));
-		command->Execute();
+		if (controller == NULL) {
+			I4C3DMisc::ReportError(_T("[ERROR] Controllerが生成されていません。"));
+			break;
+		}
+
+		if (lstrcmpi((LPCTSTR)lParam, _T("tumble")) == 0) {
+			controller->TumbleExecute(LOWORD(wParam), HIWORD(wParam));
+
+		} else if (lstrcmpi((LPCTSTR)lParam, _T("track")) == 0) {
+			controller->TrackExecute(LOWORD(wParam), HIWORD(wParam));
+
+		} else if (lstrcmpi((LPCTSTR)lParam, _T("dolly")) == 0) {
+			controller->DollyExecute(LOWORD(wParam), HIWORD(wParam));
+
+		}
 		break;
 
 	case WM_COMMAND:
@@ -186,6 +237,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_DESTROY:
 		core.Stop();
+		if (controller != NULL) {
+			delete controller;
+			controller = NULL;
+		}
+		
 		PostQuitMessage(0);
 		break;
 

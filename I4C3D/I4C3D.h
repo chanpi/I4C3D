@@ -2,4 +2,11 @@
 
 #include "resource.h"
 
-#define WM_BRIDGEMESSAGE	(WM_APP+1)
+typedef struct {
+	HWND hMainWnd;
+
+	HANDLE hThread;			// iPhone/iPodからの受信はワーカースレッドで行う
+	UINT uThreadID;
+	WSAEVENT hStopEvent;
+	SOCKET receiver;
+} I4C3DContext;

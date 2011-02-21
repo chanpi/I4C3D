@@ -80,13 +80,12 @@
   <ItemGroup>
     <ClInclude Include="I4C3D.h" />
     <ClInclude Include="I4C3DAccessor.h" />
-    <ClInclude Include="I4C3DCommand.h" />
-    <ClInclude Include="I4C3DCommandPool.h" />
+    <ClInclude Include="I4C3DAliasControl.h" />
+    <ClInclude Include="I4C3DControl.h" />
     <ClInclude Include="I4C3DCore.h" />
-    <ClInclude Include="I4C3DDollyCommand.h" />
+    <ClInclude Include="I4C3DMAYAControl.h" />
     <ClInclude Include="I4C3DMisc.h" />
-    <ClInclude Include="I4C3DTrackCommand.h" />
-    <ClInclude Include="I4C3DTumbleCommand.h" />
+    <ClInclude Include="I4C3DRTTControl.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -94,13 +93,12 @@
   <ItemGroup>
     <ClCompile Include="I4C3D.cpp" />
     <ClCompile Include="I4C3DAccessor.cpp" />
-    <ClCompile Include="I4C3DCommand.cpp" />
-    <ClCompile Include="I4C3DCommandPool.cpp" />
+    <ClCompile Include="I4C3DAliasControl.cpp" />
+    <ClCompile Include="I4C3DControl.cpp" />
     <ClCompile Include="I4C3DCore.cpp" />
-    <ClCompile Include="I4C3DDollyCommand.cpp" />
+    <ClCompile Include="I4C3DMAYAControl.cpp" />
     <ClCompile Include="I4C3DMisc.cpp" />
-    <ClCompile Include="I4C3DTrackCommand.cpp" />
-    <ClCompile Include="I4C3DTumbleCommand.cpp" />
+    <ClCompile Include="I4C3DRTTControl.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

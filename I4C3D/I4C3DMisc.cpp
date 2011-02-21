@@ -1,7 +1,8 @@
 #include "StdAfx.h"
+#include "I4C3D.h"
 #include "I4C3DMisc.h"
 
-extern TCHAR *szTitle;
+extern TCHAR szTitle[MAX_LOADSTRING];
 static HANDLE g_hMutex = NULL;
 
 I4C3DMisc::I4C3DMisc(void)
