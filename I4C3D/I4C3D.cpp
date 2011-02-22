@@ -138,7 +138,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // グローバル変数にインスタンス処理を格納します。
 
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+      CW_USEDEFAULT, 0, 300, 200, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
@@ -166,7 +166,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
-	HWND hWnd3DSoftware;
 
 	static I4C3DContext context = {0};
 	static I4C3DCore core;
@@ -175,7 +174,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_CREATE:
-		if (!core.Start(&hWnd3DSoftware)) {
+		if (!core.Start(&context)) {
 		} else {
 			// メニュー項目　有効にする
 
@@ -183,11 +182,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TCHAR szSoftwareName[MAX_PATH];
 			core.GetTarget3DSoftwareName(szSoftwareName, sizeof(szSoftwareName)/sizeof(szSoftwareName[0]));
 			if (lstrcmpi(szSoftwareName, _T("RTT")) == 0) {
-				controller = new I4C3DRTTControl(hWnd3DSoftware);
+				controller = new I4C3DRTTControl(context.hMainWnd);
 			} else if (lstrcmpi(szSoftwareName, _T("MAYA")) == 0) {
-				controller = new I4C3DMAYAControl(hWnd3DSoftware);
+				controller = new I4C3DMAYAControl(context.hMainWnd);
 			} else if (lstrcmpi(szSoftwareName, _T("Alias")) == 0) {
-				controller = new I4C3DAliasControl(hWnd3DSoftware);
+				controller = new I4C3DAliasControl(context.hMainWnd);
 			}
 		}
 		break;
@@ -236,7 +235,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:
-		core.Stop();
+		core.Stop(&context);
 		if (controller != NULL) {
 			delete controller;
 			controller = NULL;
