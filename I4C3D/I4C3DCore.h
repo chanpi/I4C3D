@@ -13,7 +13,7 @@ public:
 	BOOL Start(I4C3DContext* pContext);
 	void Stop(I4C3DContext* pContext);
 
-	HWND GetTarget3DSoftwareWnd(void);
+	//HWND GetTarget3DSoftwareWnd(void);
 	BOOL GetTarget3DSoftwareName(LPTSTR lpszTargetName, SIZE_T size);
 
 protected:

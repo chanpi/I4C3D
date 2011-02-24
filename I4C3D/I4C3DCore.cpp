@@ -6,9 +6,10 @@
 
 #include <process.h>
 
+extern TCHAR g_szFilePath[MAX_PATH];
+
 static BOOL CALLBACK EnumWindowProc(HWND hWnd, LPARAM lParam);
 static HWND g_targetWindow = NULL;
-static TCHAR g_szFilePath[MAX_PATH] = {0};
 
 static unsigned __stdcall I4C3DReceiveThreadProc(void* pParam);
 static unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam);
@@ -43,9 +44,9 @@ BOOL I4C3DCore::Start(I4C3DContext* pContext) {
 	I4C3DMisc::GetModuleFileWithExtension(g_szFilePath, sizeof(g_szFilePath)/sizeof(g_szFilePath[0]), _T("ini"));
 
 	// ターゲットウィンドウを取得
-	if ((pContext->hMainWnd = GetTarget3DSoftwareWnd()) == NULL) {
-		return FALSE;
-	}
+	//if ((pContext->hTargetParentWnd = GetTarget3DSoftwareWnd()) == NULL) {
+	//	return FALSE;
+	//}
 
 	// 設定ファイルよりBridge Portを取得
 	uBridgePort = (USHORT)GetPrivateProfileInt(_T("GLOBAL"), _T("BRIDGE_PORT"), 10001, g_szFilePath);
@@ -78,7 +79,6 @@ BOOL I4C3DCore::Start(I4C3DContext* pContext) {
 	}
 
 	ResumeThread(pContext->hThread);
-	CloseHandle(pContext->hThread);
 
 	m_started = TRUE;
 	return TRUE;
@@ -107,17 +107,17 @@ void I4C3DCore::Stop(I4C3DContext* pContext) {
 }
 
 
-HWND I4C3DCore::GetTarget3DSoftwareWnd(void) {
-	TCHAR szTarget[MAX_PATH] = {0};
-	if (GetTarget3DSoftwareName(szTarget, MAX_PATH)) {
-		if (!EnumWindows(&EnumWindowProc, (LPARAM)szTarget)) {
-			OutputDebugString(_T("not NULL\n"));
-		} else {
-			OutputDebugString(_T("NULL\n"));
-		}
-	}
-	return g_targetWindow;
-}
+//HWND I4C3DCore::GetTarget3DSoftwareWnd(void) {
+//	TCHAR szTarget[MAX_PATH] = {0};
+//	if (GetTarget3DSoftwareName(szTarget, MAX_PATH)) {
+//		if (!EnumWindows(&EnumWindowProc, (LPARAM)szTarget)) {
+//			OutputDebugString(_T("not NULL\n"));
+//		} else {
+//			OutputDebugString(_T("NULL\n"));
+//		}
+//	}
+//	return g_targetWindow;
+//}
 
 BOOL I4C3DCore::GetTarget3DSoftwareName(LPTSTR lpszTargetName, SIZE_T size) {
 	GetPrivateProfileString(_T("GLOBAL"), _T("TARGET_SOFT"), NULL, lpszTargetName, size, g_szFilePath);
@@ -125,11 +125,11 @@ BOOL I4C3DCore::GetTarget3DSoftwareName(LPTSTR lpszTargetName, SIZE_T size) {
 	OutputDebugString(lpszTargetName);
 	OutputDebugString(_T("\n"));
 
-	if (lstrcmp(lpszTargetName, _T("")) != 0) {
-		GetPrivateProfileString(lpszTargetName, _T("WINDOW_NAME"), _T(""), lpszTargetName, size, g_szFilePath);
-	} else {
-		return FALSE;
-	}
+	//if (lstrcmp(lpszTargetName, _T("")) != 0) {
+	//	GetPrivateProfileString(lpszTargetName, _T("WINDOW_NAME"), _T(""), lpszTargetName, size, g_szFilePath);
+	//} else {
+	//	return FALSE;
+	//}
 
 	return lstrlen(lpszTargetName);
 }
@@ -207,9 +207,17 @@ unsigned __stdcall I4C3DReceiveThreadProc(void* pParam)
 					I4C3DMisc::ReportError(szError);
 					break;
 				}
+
+				// 設定ファイルから終端文字を取得
+				TCHAR szTermination[3] = {0};
+				GetPrivateProfileString(_T("GLOBAL"), _T("TERMINATION"), NULL, szTermination, sizeof(szTermination)/sizeof(szTermination[0]), g_szFilePath);
+				if (szTermination[0] != 0) {
+					pChildContext->cTermination = szTermination[0];
+				} else {
+					pChildContext->cTermination = _T('\0');
+				}
 				pChildContext->pContext = pContext;
 				pChildContext->clientSocket = newClient;
-				pChildContext->cTermination = '\0';		// TODO 設定ファイルから読み込み？
 				hChildThread = (HANDLE)_beginthreadex(NULL, 0, I4C3DAcceptedThreadProc, pChildContext, 0, &uThreadID);
 				if (hChildThread == INVALID_HANDLE_VALUE) {
 					_stprintf(szError, _T("[ERROR] Create child thread. : %d"), GetLastError());
@@ -320,7 +328,7 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 					OutputDebugString(szError);
 
 					// コマンド送信のためSendMessage（deltaX, deltaY, szCommandが解放される前に処理を行う）
-					SendMessage(pChildContext->pContext->hMainWnd, WM_BRIDGEMESSAGE, MAKEWPARAM(deltaX, deltaY), (LPARAM)szCommand);
+					SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, MAKEWPARAM(deltaX, deltaY), (LPARAM)szCommand);
 
 					if (ptr == recvBuffer + totalRecvBytes) {
 						FillMemory(recvBuffer, sizeof(recvBuffer), 0xFF);

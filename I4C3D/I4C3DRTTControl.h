@@ -6,7 +6,7 @@ class I4C3DRTTControl :
 {
 public:
 	I4C3DRTTControl(void);
-	I4C3DRTTControl(HWND hWnd);
+	I4C3DRTTControl(I4C3DContext* pContext);
 	~I4C3DRTTControl(void);
 
 	void TumbleExecute(int deltaX, int deltaY);

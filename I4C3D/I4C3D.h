@@ -3,8 +3,9 @@
 #include "resource.h"
 
 typedef struct {
-	HWND hMainWnd;
-
+	HWND hMyWnd;
+	HWND hTargetParentWnd;
+	
 	HANDLE hThread;			// iPhone/iPodからの受信はワーカースレッドで行う
 	UINT uThreadID;
 	WSAEVENT hStopEvent;

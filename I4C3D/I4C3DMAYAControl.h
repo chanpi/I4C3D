@@ -5,7 +5,7 @@ class I4C3DMAYAControl :
 {
 public:
 	I4C3DMAYAControl(void);
-	I4C3DMAYAControl(HWND hWnd);
+	I4C3DMAYAControl(I4C3DContext* pContext);
 	~I4C3DMAYAControl(void);
 
 	void TumbleExecute(int deltaX, int deltaY);
