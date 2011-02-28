@@ -5,21 +5,26 @@ extern TCHAR g_szFilePath[MAX_PATH];
 
 I4C3DRTTControl::I4C3DRTTControl(void)
 {
-	m_hTargetParentWnd = NULL;
-	m_hTargetChildWnd = NULL;
-	m_posX = 0;
-	m_posY = 0;
-	m_ctrl = m_alt = m_shift = FALSE;
+	m_hTargetParentWnd	= NULL;
+	m_hTargetChildWnd	= NULL;
+	m_basePos.x			= 0;
+	m_basePos.y			= 0;
+	m_currentPos.x		= 0;
+	m_currentPos.y		= 0;
+	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 }
 
 
 I4C3DRTTControl::I4C3DRTTControl(I4C3DContext* pContext)
 {
-	m_hTargetParentWnd = pContext->hTargetParentWnd;
-	m_hTargetChildWnd = NULL;	// TODO!!!!
-	m_posX = 0;
-	m_posY = 0;
-	m_ctrl = m_alt = m_shift = FALSE;
+	m_hTargetParentWnd	= pContext->hTargetParentWnd;
+	m_hTargetChildWnd	= NULL;	// TODO!!!!
+	m_basePos.x			= 0;
+	m_basePos.y			= 0;
+	m_currentPos.x		= 0;
+	m_currentPos.y		= 0;
+
+	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 
 	TCHAR tempBuffer[5] = {0};
 	GetPrivateProfileString(_T("RTT"), _T("MODIFIER_KEY"), _T("C"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szFilePath);

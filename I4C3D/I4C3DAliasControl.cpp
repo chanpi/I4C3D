@@ -6,11 +6,13 @@ static BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam);
 
 I4C3DAliasControl::I4C3DAliasControl(void)
 {
-	m_hTargetParentWnd = NULL;
-	m_hTargetChildWnd = NULL;
-	m_posX = 0;
-	m_posY = 0;
-	m_ctrl = m_alt = m_shift = FALSE;
+	m_hTargetParentWnd	= NULL;
+	m_hTargetChildWnd	= NULL;
+	m_basePos.x			= 0;
+	m_basePos.y			= 0;
+	m_currentPos.x		= 0;
+	m_currentPos.y		= 0;
+	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 }
 
 I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
@@ -20,9 +22,11 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 		I4C3DMisc::ReportError(_T("[ERROR] ターゲットウィンドウが取得できません。"));
 		DestroyWindow(pContext->hMyWnd);
 	}
-	m_hTargetChildWnd = NULL;
-	m_posX = 0;
-	m_posY = 0;
+	m_hTargetChildWnd	= NULL;
+	m_basePos.x			= 0;
+	m_basePos.y			= 0;
+	m_currentPos.x		= 0;
+	m_currentPos.y		= 0;
 
 	EnumChildWindows(m_hTargetParentWnd, EnumChildProc, (LPARAM)&m_hTargetChildWnd);
 	if (m_hTargetChildWnd == NULL) {
@@ -30,7 +34,7 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 		DestroyWindow(pContext->hMyWnd);
 	}
 
-	m_ctrl = m_alt = m_shift = FALSE;
+	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 
 	TCHAR tempBuffer[5] = {0};
 	GetPrivateProfileString(_T("Alias"), _T("MODIFIER_KEY"), _T("AS"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szFilePath);
@@ -57,21 +61,25 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 
 I4C3DAliasControl::~I4C3DAliasControl(void)
 {
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 
 void I4C3DAliasControl::TumbleExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
 }
 
 void I4C3DAliasControl::TrackExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TrackExecute(deltaX, deltaY);
 }
 
 void I4C3DAliasControl::DollyExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
 }
 
@@ -79,8 +87,6 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 {
 	TCHAR szWindowTitle[I4C3D_BUFFER_SIZE];
 	GetWindowText(hWnd, szWindowTitle, sizeof(szWindowTitle)/sizeof(szWindowTitle[0]));
-	//lstrcat(szBuffer, szWindowTitle);
-	//lstrcat(szBuffer, _T("\n"));
 	if (!lstrcmpi(_T("Alias.glw"), szWindowTitle)) {
 		*(HWND*)lParam = hWnd;
 		return FALSE;

@@ -1,6 +1,7 @@
 #pragma once
 #include "I4C3D.h"
 #include "I4C3DMisc.h"
+#include "VirtualMotion.h"
 
 class I4C3DControl
 {
@@ -14,11 +15,16 @@ public:
 	virtual void DollyExecute(int deltaX, int deltaY);
 
 protected:
+	void SendSystemKeys(HWND hTargetWnd, BOOL bDown);
 	HWND m_hTargetParentWnd;
 	HWND m_hTargetChildWnd;
-	int m_posX;
-	int m_posY;
+	POINT m_basePos;
+	POINT m_currentPos;
 	BOOL m_ctrl;
 	BOOL m_alt;
 	BOOL m_shift;
+	BOOL m_bSyskeyDown;
+	
+private:
+	BOOL CheckTargetState(void);
 };

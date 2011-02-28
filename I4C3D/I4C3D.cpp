@@ -10,6 +10,8 @@
 #include "I4C3DMAYAControl.h"
 #include "I4C3DAliasControl.h"
 
+//#define	I4C3D_LOG_DEBUG
+
 #define BUTTON_WIDTH		80
 #define BUTTON_HEIGHT		32
 #define ID_SELECT_BUTTON	501
@@ -27,9 +29,13 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
+static BOOL BridgeMessage(I4C3DContext* pContext, int deltaX, int deltaY, LPCTSTR lpszCommand);
+static BOOL SelectTarget(I4C3DContext* pContext, I4C3DCore* pCore);
 static void CreateListBox(HWND hMainWnd);
 static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam);
+
 static HWND g_listBox = NULL;
+
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -46,11 +52,19 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	MSG msg;
 	HACCEL hAccelTable;
 
+	// グローバル文字列を初期化しています。
+	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	LoadString(hInstance, IDC_I4C3D, szWindowClass, MAX_LOADSTRING);
+
 	// 二重起動防止
 	if (!misc.ExecuteOnce()) {
 		misc.Cleanup();
 		return EXIT_FAILURE;
 	}
+
+	I4C3DMisc::LogDebugMessage(_T("1回目\n"));
+	I4C3DMisc::LogDebugMessage(_T("2回目\n"));
+	I4C3DMisc::LogDebugMessage(_T("表　ソリューション\n"));
 
 	nResult = WSAStartup(wVersion, &wsaData);
 	if (nResult != 0) {
@@ -65,9 +79,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		return EXIT_FAILURE;
 	}
 
-	// グローバル文字列を初期化しています。
-	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-	LoadString(hInstance, IDC_I4C3D, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 
 	// アプリケーションの初期化を実行します:
@@ -176,11 +187,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
-	RECT rect;
 
 	static I4C3DContext context = {0};
 	static I4C3DCore core;
-	static I4C3DControl* controller = NULL;
 
 	static int currentPosX = 0;
 	static int currentPosY = 0;
@@ -204,31 +213,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_BRIDGEMESSAGE:
 		// WPARAM: HIWORD(wParam)	-> y座標  LOWORD(wParam) -> x座標
 		// LPARAM: (LPCTSTR)lParam	-> コマンド名(tumble, dollyなど)
-		if (controller == NULL) {
-			I4C3DMisc::ReportError(_T("[ERROR] ターゲットソフトを選択してください。"));
-			break;
-		}
-
-		GetWindowRect(context.hTargetParentWnd, &rect);
-		SetWindowPos(context.hTargetParentWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-		SetWindowPos(context.hTargetParentWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-
-		SetFocus(context.hTargetParentWnd);
-		SetForegroundWindow(context.hTargetParentWnd);
-		//if (!currentPosX && !currentPosY) {
-		//	currentPosX = 
-		//}
-
-		if (lstrcmpi((LPCTSTR)lParam, _T("tumble")) == 0) {
-			controller->TumbleExecute(LOWORD(wParam), HIWORD(wParam));
-
-		} else if (lstrcmpi((LPCTSTR)lParam, _T("track")) == 0) {
-			controller->TrackExecute(LOWORD(wParam), HIWORD(wParam));
-
-		} else if (lstrcmpi((LPCTSTR)lParam, _T("dolly")) == 0) {
-			controller->DollyExecute(LOWORD(wParam), HIWORD(wParam));
-
-		}
+		BridgeMessage(&context, LOWORD(wParam), HIWORD(wParam), (LPCTSTR)lParam);
 		break;
 
 	case WM_COMMAND:
@@ -245,44 +230,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case ID_SELECT_BUTTON:
-			{
-				TCHAR szTargetTitle[MAX_PATH];
-				int index = SendMessage(g_listBox, LB_GETCURSEL, 0, 0);
-				if (index != LB_ERR) {
-					SendMessage(g_listBox, LB_GETTEXT, index, (LPARAM)szTargetTitle);
-
-					context.hTargetParentWnd = NULL;
-					context.hTargetParentWnd = FindWindow(NULL, szTargetTitle);
-					if (context.hTargetParentWnd != NULL) {
-						// 取得成功
-
-						// スタート座標を取得
-						GetWindowRect(context.hTargetParentWnd, &rect);
-						currentPosX = rect.left + (rect.right - rect.left)/2;
-						currentPosY = rect.top + (rect.bottom - rect.top)/2;
-
-						// コントローラを生成
-						TCHAR szSoftwareName[MAX_PATH];
-						core.GetTarget3DSoftwareName(szSoftwareName, sizeof(szSoftwareName)/sizeof(szSoftwareName[0]));
-						if (controller != NULL) {
-							delete controller;
-							controller = NULL;
-						}
-						if (lstrcmpi(szSoftwareName, _T("RTT")) == 0) {
-							controller = new I4C3DRTTControl(&context);
-						} else if (lstrcmpi(szSoftwareName, _T("MAYA")) == 0) {
-							controller = new I4C3DMAYAControl(&context);
-						} else if (lstrcmpi(szSoftwareName, _T("Alias")) == 0) {
-							controller = new I4C3DAliasControl(&context);
-						} else {
-							I4C3DMisc::ReportError(_T("[ERROR] ターゲットコントローラの作成に失敗しました。\n終了します。"));
-							DestroyWindow(hWnd);
-						}
-
-						break;
-					}
-				}
-				I4C3DMisc::ReportError(_T("[ERROR] ターゲットソフトが取得できません。\n更新ボタンを押してもう一度選択してください。"));
+			if (!SelectTarget(&context, &core)) {
+				DestroyWindow(hWnd);
 			}
 			break;
 
@@ -309,9 +258,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_DESTROY:
 		core.Stop(&context);
-		if (controller != NULL) {
-			delete controller;
-			controller = NULL;
+		if (context.pController != NULL) {
+			delete context.pController;
+			context.pController = NULL;
 		}
 		
 		PostQuitMessage(0);
@@ -344,6 +293,69 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 //////////////////////////////////////////////////////////
+
+BOOL BridgeMessage(I4C3DContext* pContext, int deltaX, int deltaY, LPCTSTR lpszCommand)
+{
+	if (pContext->pController == NULL) {
+		I4C3DMisc::ReportError(_T("[ERROR] ターゲットソフトを選択してください。"));
+		return FALSE;
+	}
+
+	SetWindowPos(pContext->hTargetParentWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	SetWindowPos(pContext->hTargetParentWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+	SetFocus(pContext->hTargetParentWnd);
+	SetForegroundWindow(pContext->hTargetParentWnd);
+
+	if (lstrcmpi(lpszCommand, _T("tumble")) == 0) {
+		pContext->pController->TumbleExecute(deltaX, deltaY);
+
+	} else if (lstrcmpi(lpszCommand, _T("track")) == 0) {
+		pContext->pController->TrackExecute(deltaX, deltaY);
+
+	} else if (lstrcmpi(lpszCommand, _T("dolly")) == 0) {
+		pContext->pController->DollyExecute(deltaX, deltaY);
+
+	}
+	return TRUE;
+}
+
+BOOL SelectTarget(I4C3DContext* pContext, I4C3DCore* pCore)
+{
+	TCHAR szTargetTitle[MAX_PATH];
+	int index = SendMessage(g_listBox, LB_GETCURSEL, 0, 0);
+	if (index != LB_ERR) {
+		SendMessage(g_listBox, LB_GETTEXT, index, (LPARAM)szTargetTitle);
+
+		pContext->hTargetParentWnd = NULL;
+		pContext->hTargetParentWnd = FindWindow(NULL, szTargetTitle);
+		if (pContext->hTargetParentWnd != NULL) {
+			// 取得成功
+
+			// コントローラを生成
+			if (pContext->pController != NULL) {
+				delete pContext->pController;
+				pContext->pController = NULL;
+			}
+			TCHAR szSoftwareName[MAX_PATH];
+			pCore->GetTarget3DSoftwareName(szSoftwareName, sizeof(szSoftwareName)/sizeof(szSoftwareName[0]));
+			if (lstrcmpi(szSoftwareName, _T("RTT")) == 0) {
+				pContext->pController = new I4C3DRTTControl(pContext);
+			} else if (lstrcmpi(szSoftwareName, _T("MAYA")) == 0) {
+				pContext->pController = new I4C3DMAYAControl(pContext);
+			} else if (lstrcmpi(szSoftwareName, _T("Alias")) == 0) {
+				pContext->pController = new I4C3DAliasControl(pContext);
+			} else {
+				I4C3DMisc::ReportError(_T("[ERROR] ターゲットコントローラの作成に失敗しました。\n終了します。"));
+				return FALSE;
+			}
+
+			return TRUE;
+		}
+	}
+	I4C3DMisc::ReportError(_T("[ERROR] ターゲットソフトが取得できません。\n更新ボタンを押してもう一度選択してください。"));
+	return FALSE;
+}
 
 void CreateListBox(HWND hMainWnd)
 {
@@ -386,7 +398,7 @@ void CreateListBox(HWND hMainWnd)
 		hInst, NULL);
 }
 
-BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM lParam)
+BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM /*lParam*/)
 {
 	TCHAR szWndTitle[MAX_PATH] = {0};
 	GetWindowText(hWnd, szWndTitle, MAX_PATH);

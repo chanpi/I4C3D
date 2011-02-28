@@ -11,6 +11,7 @@
 // Windows ヘッダー ファイル:
 #include <WinSock2.h>
 #include <windows.h>
+#include <WindowsX.h>
 
 // C ランタイム ヘッダー ファイル
 #include <stdio.h>
