@@ -13,7 +13,7 @@ static HWND g_targetWindow = NULL;
 
 static unsigned __stdcall I4C3DReceiveThreadProc(void* pParam);
 static unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam);
-static int AnalyzeMessage(LPCSTR lpszMessage, LPSTR lpszCommand, SIZE_T size, int* pDeltaX, int* pDeltaY);
+static int AnalyzeMessage(LPCSTR lpszMessage, LPSTR lpszCommand, SIZE_T size, PPOINT pDelta);
 
 typedef struct {
 	I4C3DContext* pContext;
@@ -39,9 +39,6 @@ BOOL I4C3DCore::Start(I4C3DContext* pContext) {
 	if (m_started) {
 		return TRUE;
 	}
-
-	// iniファイルの絶対パスを取得
-	I4C3DMisc::GetModuleFileWithExtension(g_szFilePath, sizeof(g_szFilePath)/sizeof(g_szFilePath[0]), _T("ini"));
 
 	// ターゲットウィンドウを取得
 	//if ((pContext->hTargetParentWnd = GetTarget3DSoftwareWnd()) == NULL) {
@@ -151,6 +148,8 @@ BOOL CALLBACK EnumWindowProc(HWND hWnd, LPARAM lParam)
 // accept処理を非同期で行う
 unsigned __stdcall I4C3DReceiveThreadProc(void* pParam)
 {
+	I4C3DMisc::LogDebugMessage(_T("--- in I4C3DReceiveThreadProc ---"));
+
 	TCHAR szError[I4C3D_BUFFER_SIZE];
 	I4C3DContext* pContext = (I4C3DContext*)pParam;
 
@@ -217,6 +216,7 @@ unsigned __stdcall I4C3DReceiveThreadProc(void* pParam)
 					pChildContext->cTermination = cszTermination[0];
 					OutputDebugStringA(cszTermination);
 					OutputDebugString(_T("\n"));
+					I4C3DMisc::LogDebugMessage(szTermination);
 
 				} else {
 					pChildContext->cTermination = _T('\0');
@@ -243,11 +243,14 @@ unsigned __stdcall I4C3DReceiveThreadProc(void* pParam)
 
 	shutdown(pContext->receiver, SD_BOTH);
 	closesocket(pContext->receiver);
+	I4C3DMisc::LogDebugMessage(_T("--- out I4C3DReceiveThreadProc ---"));
 	return TRUE;
 }
 
 unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 {
+	I4C3DMisc::LogDebugMessage(_T("--- in I4C3DAcceptedThreadProc ---"));
+
 	I4C3DChildContext* pChildContext = (I4C3DChildContext*)pParam;
 
 	TCHAR szError[I4C3D_BUFFER_SIZE];
@@ -257,8 +260,7 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 	BOOL bBreak = FALSE;
 
 	char szCommand[I4C3D_BUFFER_SIZE] = {0};
-	int deltaX;
-	int deltaY;
+	POINT delta;
 
 	DWORD dwResult = 0;
 	WSAEVENT hEvent = NULL;
@@ -324,25 +326,31 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 					totalRecvBytes += nBytes;
 
 					// 終端文字が見つからない場合、バッファをクリア
-					if (totalRecvBytes >= sizeof(recvBuffer) && pTermination == NULL) {
-						FillMemory(recvBuffer, sizeof(recvBuffer), 0xFF);
-						totalRecvBytes = 0;
+					if (pTermination == NULL) {
+						if (totalRecvBytes >= sizeof(recvBuffer)) {
+							FillMemory(recvBuffer, sizeof(recvBuffer), 0xFF);
+							totalRecvBytes = 0;
+						}
 						continue;
 					}
-					
-					while ((pTermination = (LPCSTR)memchr(recvBuffer+totalRecvBytes, pChildContext->cTermination, nBytes)) != NULL) {
+
+					do {
 						// 電文解析
-						deltaX = deltaY = 0;
-						if (AnalyzeMessage(recvBuffer, szCommand, sizeof(szCommand), &deltaX, &deltaY) != 3) {
-							//I4C3DMisc::ReportError(_T("[ERROR] 電文解析に失敗しています。"));
-							//break;
+						delta.x = delta.y = 0;
+						if (AnalyzeMessage(recvBuffer, szCommand, sizeof(szCommand), &delta) != 3) {
+							I4C3DMisc::ReportError(_T("[ERROR] 電文解析に失敗しています。"));
+							break;
 
 						} else {
 							// コマンド送信のためSendMessage（deltaX, deltaY, szCommandが解放される前に処理を行う）
-							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, MAKEWPARAM(deltaX, deltaY), (LPARAM)szCommand);
+							{
+								TCHAR szError[I4C3D_BUFFER_SIZE];
+								_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Core: deltaX:%d deltaY:%d"), delta.x, delta.y);
+								I4C3DMisc::LogDebugMessage(szError);
+							}
+							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, (WPARAM)&delta, (LPARAM)szCommand);
 						}
 
-						
 						if (pTermination == recvBuffer + totalRecvBytes) {
 							FillMemory(recvBuffer, sizeof(recvBuffer), 0xFF);
 							totalRecvBytes = 0;
@@ -358,7 +366,7 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 							I4C3DMisc::ReportError(_T("[ERROR] 受信メッセージの解析に失敗しています。"));
 							break;
 						}
-					}
+					} while ((pTermination = (LPCSTR)memchr(recvBuffer+totalRecvBytes, pChildContext->cTermination, nBytes)) != NULL);
 
 				}
 			}
@@ -378,16 +386,13 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 	closesocket(pChildContext->clientSocket);
 
 	free(pChildContext);
+
+	I4C3DMisc::LogDebugMessage(_T("--- out I4C3DAcceptedThreadProc ---"));
+
 	return TRUE;
 }
 
-int AnalyzeMessage(LPCSTR lpszMessage, LPSTR lpszCommand, SIZE_T size, int* pDeltaX, int* pDeltaY)
+int AnalyzeMessage(LPCSTR lpszMessage, LPSTR lpszCommand, SIZE_T size, PPOINT pDelta)
 {
-	char tempBuffer[I4C3D_BUFFER_SIZE];
-	int ret = sscanf_s(lpszMessage, "%s %d %d?", lpszCommand, pDeltaX, pDeltaY);
-
-	OutputDebugStringA(lpszCommand);
-	OutputDebugString(_T("\n"));
-
-	return ret;
+	return sscanf_s(lpszMessage, "%s %d %d?", lpszCommand, size, &pDelta->x, &pDelta->y);
 }

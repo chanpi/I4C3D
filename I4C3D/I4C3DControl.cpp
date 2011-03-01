@@ -38,18 +38,37 @@ void I4C3DControl::TumbleExecute(int deltaX, int deltaY)
 		return;
 	}
 
-	mouseMessage.hTargetWnd		= m_hTargetChildWnd;
-	mouseMessage.dragButton		= LButtonDrag;
-	mouseMessage.dragStartPos	= m_currentPos;
-	m_currentPos.x				+= deltaX;
-	m_currentPos.y				+= deltaY;
-	mouseMessage.dragEndPos		= m_currentPos;
-	mouseMessage.uKeyState		= MK_SHIFT;
-	VMMouseDrag(&mouseMessage);
+	if (!m_bSyskeyDown) {
+		VMVirtualKeyDown(m_hTargetParentWnd, VK_MENU);
+		VMVirtualKeyDown(m_hTargetParentWnd, VK_SHIFT);
+		m_bSyskeyDown = TRUE;
+		Sleep(5);
+		I4C3DMisc::LogDebugMessage(_T("syskey down"));
+	}
 
-	//PostMessage(m_hTargetChildWnd, WM_LBUTTONDOWN, MK_SHIFT | MK_LBUTTON, MAKELPARAM(m_currentPos.x, m_currentPos.y));
-	//PostMessage(m_hTargetChildWnd, WM_MOUSEMOVE, MK_SHIFT | MK_LBUTTON, MAKELPARAM(m_currentPos.x+=deltaX, m_currentPos.y+=deltaY));
-	//PostMessage(m_hTargetChildWnd, WM_LBUTTONUP, MK_SHIFT, MAKELPARAM(m_currentPos.x, m_currentPos.y));
+	{
+		TCHAR szError[I4C3D_BUFFER_SIZE];
+		_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("deltaX:%d deltaY:%d Current(%d, %d) -> (%d, %d)"), 
+			deltaX, deltaY, m_currentPos.x, m_currentPos.y, m_currentPos.x+deltaX, m_currentPos.y+deltaY);
+		I4C3DMisc::LogDebugMessage(szError);
+
+		_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Parent:%x Child:%x"), m_hTargetParentWnd, m_hTargetChildWnd);
+		I4C3DMisc::LogDebugMessage(szError);
+	}
+	//mouseMessage.hTargetWnd		= m_hTargetChildWnd;
+	//mouseMessage.dragButton		= LButtonDrag;
+	//mouseMessage.dragStartPos	= m_currentPos;
+	//m_currentPos.x				+= deltaX;
+	//m_currentPos.y				+= deltaY;
+	//mouseMessage.dragEndPos		= m_currentPos;
+	//mouseMessage.uKeyState		= MK_SHIFT;
+	//VMMouseDrag(&mouseMessage);
+
+	SetFocus(m_hTargetParentWnd);
+	PostMessage(m_hTargetChildWnd, WM_LBUTTONDOWN, MK_SHIFT | MK_LBUTTON, MAKELPARAM(m_currentPos.x, m_currentPos.y));
+	PostMessage(m_hTargetChildWnd, WM_MOUSEMOVE, MK_SHIFT | MK_LBUTTON, MAKELPARAM(m_currentPos.x+=deltaX, m_currentPos.y+=deltaY));
+	PostMessage(m_hTargetChildWnd, WM_LBUTTONUP, MK_SHIFT, MAKELPARAM(m_currentPos.x, m_currentPos.y));
+	I4C3DMisc::LogDebugMessage(_T("PostMessage"));
 }
 
 void I4C3DControl::TrackExecute(int deltaX, int deltaY)
@@ -100,27 +119,36 @@ void I4C3DControl::SendSystemKeys(HWND hTargetWnd, BOOL bDown)
 {
 	if (bDown && !m_bSyskeyDown) {
 		if (m_ctrl) {
+			I4C3DMisc::LogDebugMessage(_T("[Ctrl] down"));
 			VMVirtualKeyDown(hTargetWnd, VK_CONTROL);
 		}
 		if (m_alt) {
+			I4C3DMisc::LogDebugMessage(_T("[Alt] down"));
 			VMVirtualKeyDown(hTargetWnd, VK_MENU);
 		}
 		if (m_shift) {
+			I4C3DMisc::LogDebugMessage(_T("[Shift] down"));
 			VMVirtualKeyDown(hTargetWnd, VK_SHIFT);
 		}
+		m_bSyskeyDown = TRUE;
 
 	} else if (!bDown && m_bSyskeyDown) {
 		if (m_shift) {
+			I4C3DMisc::LogDebugMessage(_T("[Shift] up"));
 			VMVirtualKeyUp(hTargetWnd, VK_SHIFT);
 		}
 		if (m_alt) {
+			I4C3DMisc::LogDebugMessage(_T("[Alt] up"));
 			VMVirtualKeyUp(hTargetWnd, VK_MENU);
 		}
 		if (m_ctrl) {
+			I4C3DMisc::LogDebugMessage(_T("[Ctrl] up"));
 			VMVirtualKeyUp(hTargetWnd, VK_CONTROL);
 		}
+		m_bSyskeyDown = FALSE;
 
 	}
+	Sleep(5);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -137,14 +165,32 @@ BOOL I4C3DControl::CheckTargetState(void)
 		// ターゲットウィンドウの位置のチェック
 		GetWindowRect(m_hTargetParentWnd, &rect);
 		m_basePos.x = rect.left + (rect.right - rect.left) / 2;
-		m_basePos.y = rect.top + (rect.bottom - rect.right) / 2;
+		m_basePos.y = rect.top + (rect.bottom - rect.top) / 2;
+
+		{
+			TCHAR szError[I4C3D_BUFFER_SIZE] = {0};
+			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), 
+				_T("top:%d bottom:%d left:%d right:%d Base(%d, %d) Current(%d, %d)"), 
+				rect.top, rect.bottom, rect.left, rect.right,
+				m_basePos.x, m_basePos.y, m_currentPos.x, m_currentPos.y);
+			I4C3DMisc::LogDebugMessage(szError);
+		}
 
 		// currentPosのはみ出しチェック
-		GetClientRect(m_hTargetParentWnd, &rect);
+		//GetClientRect(m_hTargetParentWnd, &rect);
 		if (m_currentPos.x < rect.left || rect.right < m_currentPos.x
 			|| m_currentPos.y < rect.top || rect.bottom < m_currentPos.y) {
 				m_currentPos.x = m_basePos.x;
 				m_currentPos.y = m_basePos.y;
+		}
+
+		{
+			TCHAR szError[I4C3D_BUFFER_SIZE] = {0};
+			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), 
+				_T("top:%d bottom:%d left:%d right:%d Base(%d, %d) Current(%d, %d)"), 
+				rect.top, rect.bottom, rect.left, rect.right,
+				m_basePos.x, m_basePos.y, m_currentPos.x, m_currentPos.y);
+			I4C3DMisc::LogDebugMessage(szError);
 		}
 
 		return TRUE;

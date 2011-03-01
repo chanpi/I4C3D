@@ -67,19 +67,19 @@ I4C3DAliasControl::~I4C3DAliasControl(void)
 
 void I4C3DAliasControl::TumbleExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	//SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
 }
 
 void I4C3DAliasControl::TrackExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	//SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TrackExecute(deltaX, deltaY);
 }
 
 void I4C3DAliasControl::DollyExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	//SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
 }
 
