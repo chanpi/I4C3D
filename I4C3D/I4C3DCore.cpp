@@ -365,6 +365,12 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 								I4C3DMisc::LogDebugMessage(szError);
 							}
 							totalRecvBytes -= (pTermination - recvBuffer);
+							{
+								I4C3DMisc::LogDebugMessageA("//--------------------------------");
+								recvBuffer[1023] = '\0';
+								I4C3DMisc::LogDebugMessageA(recvBuffer);
+								I4C3DMisc::LogDebugMessageA("--------------------------------//");
+							}
 							MoveMemory(recvBuffer, pTermination+1, nCopySize);
 							FillMemory(recvBuffer + nCopySize, sizeof(recvBuffer)/sizeof(recvBuffer[0]) - nCopySize, 0xFF);
 
