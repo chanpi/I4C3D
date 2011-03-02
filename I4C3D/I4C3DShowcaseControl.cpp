@@ -1,10 +1,10 @@
 #include "StdAfx.h"
-#include "I4C3DAliasControl.h"
+#include "I4C3DShowcaseControl.h"
 
 extern TCHAR g_szFilePath[MAX_PATH];
 static BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam);
 
-I4C3DAliasControl::I4C3DAliasControl(void)
+I4C3DShowcaseControl::I4C3DShowcaseControl(void)
 {
 	m_hTargetParentWnd	= NULL;
 	m_hTargetChildWnd	= NULL;
@@ -15,7 +15,7 @@ I4C3DAliasControl::I4C3DAliasControl(void)
 	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 }
 
-I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
+I4C3DShowcaseControl::I4C3DShowcaseControl(I4C3DContext* pContext)
 {
 	m_hTargetParentWnd = pContext->hTargetParentWnd;
 	if (m_hTargetParentWnd == NULL) {
@@ -59,35 +59,39 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 	}
 }
 
-I4C3DAliasControl::~I4C3DAliasControl(void)
+I4C3DShowcaseControl::~I4C3DShowcaseControl(void)
 {
-	SendSystemKeys(m_hTargetParentWnd, FALSE);
+	SendSystemKeys(m_hTargetChildWnd, FALSE);
 }
 
-
-void I4C3DAliasControl::TumbleExecute(int deltaX, int deltaY)
+void I4C3DShowcaseControl::TumbleExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	SendSystemKeys(m_hTargetChildWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
 }
 
-void I4C3DAliasControl::TrackExecute(int deltaX, int deltaY)
+void I4C3DShowcaseControl::TrackExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	SendSystemKeys(m_hTargetChildWnd, TRUE);
 	I4C3DControl::TrackExecute(deltaX, deltaY);
 }
 
-void I4C3DAliasControl::DollyExecute(int deltaX, int deltaY)
+void I4C3DShowcaseControl::DollyExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	SendSystemKeys(m_hTargetChildWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
 }
 
 BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 {
-	TCHAR szWindowTitle[I4C3D_BUFFER_SIZE];
-	GetWindowText(hWnd, szWindowTitle, sizeof(szWindowTitle)/sizeof(szWindowTitle[0]));
-	if (!lstrcmpi(_T("Alias.glw"), szWindowTitle)) {
+	TCHAR szClassName[I4C3D_BUFFER_SIZE];
+	GetClassName(hWnd, szClassName, sizeof(szClassName)/sizeof(szClassName[0]));
+	if (!lstrcmpi(_T("AW_VIEWER"), szClassName)) {
+		{
+			TCHAR szError[I4C3D_BUFFER_SIZE];
+			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Child: %X"), hWnd);
+			I4C3DMisc::LogDebugMessage(szError);
+		}
 		*(HWND*)lParam = hWnd;
 		return FALSE;
 	}

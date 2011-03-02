@@ -9,6 +9,7 @@
 #include "I4C3DRTTControl.h"
 #include "I4C3DMAYAControl.h"
 #include "I4C3DAliasControl.h"
+#include "I4C3DShowcaseControl.h"
 
 //#define	I4C3D_LOG_DEBUG
 
@@ -303,11 +304,6 @@ BOOL BridgeMessage(I4C3DContext* pContext, int deltaX, int deltaY, LPCSTR lpszCo
 		I4C3DMisc::ReportError(_T("[ERROR] ターゲットソフトを選択してください。"));
 		return FALSE;
 	}
-	//SetWindowPos(pContext->hTargetParentWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-	//SetWindowPos(pContext->hTargetParentWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-
-	SetFocus(pContext->hTargetParentWnd);
-	//SetForegroundWindow(pContext->hTargetParentWnd);
 	
 	if (_strcmpi(lpszCommand, "tumble") == 0) {
 		pContext->pController->TumbleExecute(deltaX, deltaY);
@@ -350,8 +346,11 @@ BOOL SelectTarget(I4C3DContext* pContext, I4C3DCore* pCore)
 			} else if (lstrcmpi(szSoftwareName, _T("Alias")) == 0) {
 				pContext->pController = new I4C3DAliasControl(pContext);
 
+			} else if (lstrcmpi(szSoftwareName, _T("SHOWCASE")) == 0) {
+				pContext->pController = new I4C3DShowcaseControl(pContext);
+
 			} else {
-				I4C3DMisc::ReportError(_T("[ERROR] ターゲットコントローラの作成に失敗しました。\n終了します。"));
+				I4C3DMisc::ReportError(_T("[ERROR] ターゲットコントローラの作成に失敗しました。\n設定ファイルを確認してください。"));
 				return FALSE;
 
 			}

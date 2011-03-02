@@ -88,6 +88,7 @@
     <ClInclude Include="I4C3DMAYAControl.h" />
     <ClInclude Include="I4C3DMisc.h" />
     <ClInclude Include="I4C3DRTTControl.h" />
+    <ClInclude Include="I4C3DShowcaseControl.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -101,6 +102,7 @@
     <ClCompile Include="I4C3DMAYAControl.cpp" />
     <ClCompile Include="I4C3DMisc.cpp" />
     <ClCompile Include="I4C3DRTTControl.cpp" />
+    <ClCompile Include="I4C3DShowcaseControl.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

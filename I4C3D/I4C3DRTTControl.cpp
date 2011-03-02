@@ -52,22 +52,26 @@ I4C3DRTTControl::I4C3DRTTControl(I4C3DContext* pContext)
 
 I4C3DRTTControl::~I4C3DRTTControl(void)
 {
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 // ctrl + マウス左ドラッグ
 void I4C3DRTTControl::TumbleExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
 }
 
 // ctrl + マウス中ドラッグ
 void I4C3DRTTControl::TrackExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TrackExecute(deltaX, deltaY);
 }
 
 // ctrl + マウス右ドラッグ
 void I4C3DRTTControl::DollyExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
 }

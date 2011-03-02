@@ -19,7 +19,7 @@ SOCKET I4C3DAccessor::InitializeSocket(LPCSTR szAddress, USHORT uPort, int nTime
 
 	socketHandler = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socketHandler == INVALID_SOCKET) {
-		_stprintf_s(szError, sizeof(szError)/sizeof(szError), _T("[ERROR] socket() : %d"), WSAGetLastError());
+		_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("[ERROR] socket() : %d"), WSAGetLastError());
 		I4C3DMisc::ReportError(szError);
 		return socketHandler;
 	}
@@ -35,7 +35,7 @@ SOCKET I4C3DAccessor::InitializeSocket(LPCSTR szAddress, USHORT uPort, int nTime
 
 		nResult = connect(socketHandler, (const SOCKADDR*)&address, sizeof(address));
 		if (nResult == SOCKET_ERROR) {
-			_stprintf_s(szError, sizeof(szError)/sizeof(szError), _T("[ERROR] connect() : %d"), WSAGetLastError());
+			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("[ERROR] connect() : %d"), WSAGetLastError());
 			I4C3DMisc::ReportError(szError);
 			closesocket(socketHandler);
 			return INVALID_SOCKET;
@@ -46,7 +46,7 @@ SOCKET I4C3DAccessor::InitializeSocket(LPCSTR szAddress, USHORT uPort, int nTime
 
 		nResult = bind(socketHandler, (const SOCKADDR*)&address, sizeof(address));
 		if (nResult == SOCKET_ERROR) {
-			_stprintf_s(szError, sizeof(szError)/sizeof(szError), _T("[ERROR] bind() : %d"), WSAGetLastError());
+			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("[ERROR] bind() : %d"), WSAGetLastError());
 			I4C3DMisc::ReportError(szError);
 			closesocket(socketHandler);
 			return INVALID_SOCKET;
@@ -57,7 +57,7 @@ SOCKET I4C3DAccessor::InitializeSocket(LPCSTR szAddress, USHORT uPort, int nTime
 			if (nResult == WSAECONNREFUSED) {
 				I4C3DMisc::ReportError(_T("[ERROR] listen() : WSAECONNREFUSED"));
 			} else {
-				_stprintf_s(szError, sizeof(szError)/sizeof(szError), _T("[ERROR] listen() : %d"), WSAGetLastError());
+				_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("[ERROR] listen() : %d"), WSAGetLastError());
 				I4C3DMisc::ReportError(szError);
 			}
 			closesocket(socketHandler);
