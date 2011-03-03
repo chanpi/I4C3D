@@ -46,8 +46,6 @@ void I4C3DControl::TumbleExecute(int deltaX, int deltaY)
 	mouseMessage.dragEndPos		= m_currentPos;
 	mouseMessage.uKeyState		= MK_SHIFT;
 	VMMouseDrag(&mouseMessage);
-
-	I4C3DMisc::LogDebugMessage(_T(">>> TumbleExecute"));
 }
 
 void I4C3DControl::TrackExecute(int deltaX, int deltaY)
@@ -66,8 +64,6 @@ void I4C3DControl::TrackExecute(int deltaX, int deltaY)
 	mouseMessage.dragEndPos		= m_currentPos;
 	mouseMessage.uKeyState		= MK_SHIFT;
 	VMMouseDrag(&mouseMessage);
-
-	I4C3DMisc::LogDebugMessage(_T(">>> TrackExecute"));
 }
 
 void I4C3DControl::DollyExecute(int deltaX, int deltaY)
@@ -86,8 +82,6 @@ void I4C3DControl::DollyExecute(int deltaX, int deltaY)
 	mouseMessage.dragEndPos		= m_currentPos;
 	mouseMessage.uKeyState		= MK_SHIFT;
 	VMMouseDrag(&mouseMessage);
-
-	I4C3DMisc::LogDebugMessage(_T(">>> DollyExecute"));
 }
 
 void I4C3DControl::SendSystemKeys(HWND hTargetWnd, BOOL bDown)
@@ -123,7 +117,6 @@ void I4C3DControl::SendSystemKeys(HWND hTargetWnd, BOOL bDown)
 		m_bSyskeyDown = FALSE;
 
 	}
-	Sleep(5);
 }
 
 /////////////////////////////////////////////////////////////////////////

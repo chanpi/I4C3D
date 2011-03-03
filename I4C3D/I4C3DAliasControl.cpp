@@ -69,18 +69,21 @@ void I4C3DAliasControl::TumbleExecute(int deltaX, int deltaY)
 {
 	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 void I4C3DAliasControl::TrackExecute(int deltaX, int deltaY)
 {
 	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TrackExecute(deltaX, deltaY);
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 void I4C3DAliasControl::DollyExecute(int deltaX, int deltaY)
 {
 	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)

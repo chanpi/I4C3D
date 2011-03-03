@@ -51,19 +51,26 @@ I4C3DMAYAControl::I4C3DMAYAControl(I4C3DContext* pContext) {
 
 I4C3DMAYAControl::~I4C3DMAYAControl(void)
 {
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 void I4C3DMAYAControl::TumbleExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 void I4C3DMAYAControl::TrackExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TrackExecute(deltaX, deltaY);
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
 
 void I4C3DMAYAControl::DollyExecute(int deltaX, int deltaY)
 {
+	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
+	SendSystemKeys(m_hTargetParentWnd, FALSE);
 }
