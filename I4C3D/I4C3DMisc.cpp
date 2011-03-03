@@ -87,16 +87,17 @@ void I4C3DMisc::LogDebugMessage(LPCTSTR lpszMessage)
 
 void I4C3DMisc::LogDebugMessageA(LPCSTR lpszMessage)
 {
+	static TCHAR szLogFileNameA[MAX_PATH];
+
 	if (g_bDebugOn) {
 		HANDLE hLogFile;
-		unsigned char szBOM[] = { 0xFF, 0xFE };
 		DWORD dwNumberOfBytesWritten = 0;
 
-		if (g_szLogFileName[0] == _T('\0')) {
-			GetModuleFileWithExtension(g_szLogFileName, sizeof(g_szLogFileName)/sizeof(g_szLogFileName[0]), _T("log"));
+		if (szLogFileNameA[0] == _T('\0')) {
+			GetModuleFileWithExtension(szLogFileNameA, sizeof(szLogFileNameA)/sizeof(szLogFileNameA[0]), _T("txt"));
 		}
 
-		hLogFile = CreateFile(g_szLogFileName, GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		hLogFile = CreateFile(szLogFileNameA, GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hLogFile == INVALID_HANDLE_VALUE) {
 			TCHAR szError[I4C3D_BUFFER_SIZE];
 			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("[ERROR] ログファイルのオープンに失敗しています。: %d"), GetLastError());
@@ -104,7 +105,6 @@ void I4C3DMisc::LogDebugMessageA(LPCSTR lpszMessage)
 			return;
 		}
 
-		WriteFile(hLogFile, szBOM, 2, &dwNumberOfBytesWritten, NULL);
 		SetFilePointer(hLogFile, 0, NULL, FILE_END);
 		WriteFile(hLogFile, lpszMessage, strlen(lpszMessage), &dwNumberOfBytesWritten, NULL);
 		WriteFile(hLogFile, "\r\n", 2, &dwNumberOfBytesWritten, NULL);
