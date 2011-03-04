@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "I4C3DMAYAControl.h"
 
-extern TCHAR g_szFilePath[MAX_PATH];
+extern TCHAR g_szIniFilePath[MAX_PATH];
 
 I4C3DMAYAControl::I4C3DMAYAControl(void)
 {
@@ -26,7 +26,7 @@ I4C3DMAYAControl::I4C3DMAYAControl(I4C3DContext* pContext) {
 	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 
 	TCHAR tempBuffer[5] = {0};
-	GetPrivateProfileString(_T("MAYA"), _T("MODIFIER_KEY"), _T("A"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szFilePath);
+	GetPrivateProfileString(_T("MAYA"), _T("MODIFIER_KEY"), _T("A"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szIniFilePath);
 	int count = lstrlen(tempBuffer);
 	for (int i = 0; i < count; i++) {
 		switch (tempBuffer[i]) {

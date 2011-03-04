@@ -3,7 +3,7 @@
 #include "I4C3DMisc.h"
 
 extern TCHAR szTitle[MAX_LOADSTRING];
-extern TCHAR g_szFilePath[MAX_PATH];
+extern TCHAR g_szIniFilePath[MAX_PATH];
 
 static HANDLE g_hMutex = NULL;
 static TCHAR g_szLogFileName[MAX_PATH] = {0};
@@ -12,10 +12,10 @@ static BOOL g_bDebugOn = FALSE;
 I4C3DMisc::I4C3DMisc(void)
 {
 	TCHAR szDebugOn[5];
-	if (g_szFilePath[0] == _T('\0')) {
-		GetModuleFileWithExtension(g_szFilePath, sizeof(g_szFilePath)/sizeof(g_szFilePath[0]), _T("ini"));
+	if (g_szIniFilePath[0] == _T('\0')) {
+		GetModuleFileWithExtension(g_szIniFilePath, sizeof(g_szIniFilePath)/sizeof(g_szIniFilePath[0]), _T("ini"));
 	}
-	GetPrivateProfileString(_T("GLOBAL"), _T("DEBUG"), NULL, szDebugOn, sizeof(szDebugOn)/sizeof(szDebugOn[0]), g_szFilePath);
+	GetPrivateProfileString(_T("GLOBAL"), _T("DEBUG"), NULL, szDebugOn, sizeof(szDebugOn)/sizeof(szDebugOn[0]), g_szIniFilePath);
 
 	if (szDebugOn != NULL && !lstrcmpi(szDebugOn, _T("ON"))) {
 		g_bDebugOn = TRUE;

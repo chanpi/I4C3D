@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "I4C3DAliasControl.h"
 
-extern TCHAR g_szFilePath[MAX_PATH];
+extern TCHAR g_szIniFilePath[MAX_PATH];
 static BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam);
 
 I4C3DAliasControl::I4C3DAliasControl(void)
@@ -37,7 +37,7 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 
 	TCHAR tempBuffer[5] = {0};
-	GetPrivateProfileString(_T("Alias"), _T("MODIFIER_KEY"), _T("AS"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szFilePath);
+	GetPrivateProfileString(_T("Alias"), _T("MODIFIER_KEY"), _T("AS"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szIniFilePath);
 	int count = lstrlen(tempBuffer);
 	for (int i = 0; i < count; i++) {
 		switch (tempBuffer[i]) {
@@ -57,6 +57,19 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 			break;
 		}
 	}
+
+	I4C3DMisc::ReportError(_T("Alias!!"));
+
+	CreateSettingMap(_T("Alias"));
+	I4C3DMisc::LogDebugMessage(_T("Alias----->"));
+	
+	std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
+	while (it != m_settingsMap.end()) {
+		I4C3DMisc::LogDebugMessage((*it).first);
+		I4C3DMisc::LogDebugMessage((*it).second);
+	}
+
+	I4C3DMisc::LogDebugMessage(_T("<-----Alias"));
 }
 
 I4C3DAliasControl::~I4C3DAliasControl(void)

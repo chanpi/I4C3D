@@ -22,7 +22,7 @@
 HINSTANCE hInst;								// 現在のインターフェイス
 TCHAR szTitle[MAX_LOADSTRING];					// タイトル バーのテキスト
 TCHAR szWindowClass[MAX_LOADSTRING];			// メイン ウィンドウ クラス名
-TCHAR g_szFilePath[MAX_PATH] = {0};
+TCHAR g_szIniFilePath[MAX_PATH] = {0};
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -58,8 +58,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	LoadString(hInstance, IDC_I4C3D, szWindowClass, MAX_LOADSTRING);
 
 	// iniファイルの絶対パスを取得
-	if (g_szFilePath[0] == _T('\0')) {
-		I4C3DMisc::GetModuleFileWithExtension(g_szFilePath, sizeof(g_szFilePath)/sizeof(g_szFilePath[0]), _T("ini"));
+	if (g_szIniFilePath[0] == _T('\0')) {
+		I4C3DMisc::GetModuleFileWithExtension(g_szIniFilePath, sizeof(g_szIniFilePath)/sizeof(g_szIniFilePath[0]), _T("ini"));
 	}
 
 	// 二重起動防止

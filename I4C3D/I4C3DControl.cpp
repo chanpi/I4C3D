@@ -2,6 +2,8 @@
 #include "I4C3DControl.h"
 
 extern TCHAR szTitle[MAX_LOADSTRING];
+extern TCHAR g_szIniFilePath[MAX_PATH];
+static void CreateSettingMap();
 
 I4C3DControl::I4C3DControl(void)
 {
@@ -154,4 +156,42 @@ BOOL I4C3DControl::CheckTargetState(void)
 	}
 
 	return FALSE;
+}
+
+void I4C3DControl::CreateSettingMap(LPCTSTR szSectionName) {
+	TCHAR szReturnedString[I4C3D_BUFFER_SIZE];
+	TCHAR szKey[I4C3D_BUFFER_SIZE];
+	TCHAR szValue[I4C3D_BUFFER_SIZE];
+
+	TCHAR* ptr = szReturnedString;
+	int ret;
+
+	if (g_szIniFilePath[0] == _T('\0')) {
+		I4C3DMisc::GetModuleFileWithExtension(g_szIniFilePath, sizeof(g_szIniFilePath)/sizeof(g_szIniFilePath[0]), _T("ini"));
+	}
+	GetPrivateProfileSection(szSectionName, szReturnedString, sizeof(szReturnedString)/sizeof(szReturnedString[0]), g_szIniFilePath);
+
+	// âêÕ
+	do {
+		I4C3DMisc::ReportError(ptr);
+		ret = _stscanf_s(ptr, _T("%s=%s"), szKey, sizeof(szKey)/sizeof(szKey[0]), 
+			szValue, sizeof(szValue)/sizeof(szValue[0]));
+		{
+			TCHAR szBuffer[5];
+			_stprintf_s(szBuffer, _T("%d"), ret);
+			I4C3DMisc::ReportError(szBuffer);
+		}
+		if (ret != 2) {
+			I4C3DMisc::ReportError(szKey);
+			I4C3DMisc::ReportError(szValue);
+			break;
+		}
+		I4C3DMisc::LogDebugMessage(szKey);
+		I4C3DMisc::LogDebugMessage(szValue);
+		if (_tcsncicmp(szKey, _T("HOTKEY_"), 7) == 0) {
+			//TCHAR* pKey = (LPTSTR)calloc(lstrlen( sizeof(TCHAR)));
+			m_settingsMap.insert(std::map<LPCTSTR, LPCTSTR>::value_type(szKey, szValue));
+		}
+		ptr = ptr + lstrlen(ptr);
+	} while (ret == 2);
 }

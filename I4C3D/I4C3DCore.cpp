@@ -6,7 +6,7 @@
 
 #include <process.h>
 
-extern TCHAR g_szFilePath[MAX_PATH];
+extern TCHAR g_szIniFilePath[MAX_PATH];
 
 static BOOL CALLBACK EnumWindowProc(HWND hWnd, LPARAM lParam);
 static HWND g_targetWindow = NULL;
@@ -46,7 +46,7 @@ BOOL I4C3DCore::Start(I4C3DContext* pContext) {
 	//}
 
 	// 設定ファイルよりBridge Portを取得
-	uBridgePort = (USHORT)GetPrivateProfileInt(_T("GLOBAL"), _T("BRIDGE_PORT"), 10001, g_szFilePath);
+	uBridgePort = (USHORT)GetPrivateProfileInt(_T("GLOBAL"), _T("BRIDGE_PORT"), 10001, g_szIniFilePath);
 
 	// iPhone待ち受けスタート
 	I4C3DAccessor accessor;
@@ -117,13 +117,13 @@ void I4C3DCore::Stop(I4C3DContext* pContext) {
 //}
 
 BOOL I4C3DCore::GetTarget3DSoftwareName(LPTSTR lpszTargetName, SIZE_T size) {
-	GetPrivateProfileString(_T("GLOBAL"), _T("TARGET_SOFT"), NULL, lpszTargetName, size, g_szFilePath);
+	GetPrivateProfileString(_T("GLOBAL"), _T("TARGET_SOFT"), NULL, lpszTargetName, size, g_szIniFilePath);
 	
 	OutputDebugString(lpszTargetName);
 	OutputDebugString(_T("\n"));
 
 	//if (lstrcmp(lpszTargetName, _T("")) != 0) {
-	//	GetPrivateProfileString(lpszTargetName, _T("WINDOW_NAME"), _T(""), lpszTargetName, size, g_szFilePath);
+	//	GetPrivateProfileString(lpszTargetName, _T("WINDOW_NAME"), _T(""), lpszTargetName, size, g_szIniFilePath);
 	//} else {
 	//	return FALSE;
 	//}
@@ -209,7 +209,7 @@ unsigned __stdcall I4C3DReceiveThreadProc(void* pParam)
 
 				// 設定ファイルから終端文字を取得
 				TCHAR szTermination[3] = {0};
-				GetPrivateProfileString(_T("GLOBAL"), _T("TERMINATION"), NULL, szTermination, sizeof(szTermination)/sizeof(szTermination[0]), g_szFilePath);
+				GetPrivateProfileString(_T("GLOBAL"), _T("TERMINATION"), NULL, szTermination, sizeof(szTermination)/sizeof(szTermination[0]), g_szIniFilePath);
 				if (szTermination[0] != 0) {
 					char cszTermination[3] = {0};
 					WideCharToMultiByte(CP_ACP, 0, szTermination, lstrlen(szTermination), cszTermination, sizeof(cszTermination), NULL, NULL);

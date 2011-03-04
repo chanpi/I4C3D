@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include "I4C3D.h"
 #include "I4C3DMisc.h"
 #include "VirtualMotion.h"
@@ -16,6 +17,7 @@ public:
 
 protected:
 	void SendSystemKeys(HWND hTargetWnd, BOOL bDown);
+	void CreateSettingMap(LPCTSTR szSectionName);
 	HWND m_hTargetParentWnd;
 	HWND m_hTargetChildWnd;
 	POINT m_basePos;
@@ -24,6 +26,8 @@ protected:
 	BOOL m_alt;
 	BOOL m_shift;
 	BOOL m_bSyskeyDown;
+
+	std::map<LPCTSTR, LPCTSTR> m_settingsMap;
 	
 private:
 	BOOL CheckTargetState(void);
