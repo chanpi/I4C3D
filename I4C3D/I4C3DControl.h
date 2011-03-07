@@ -14,6 +14,7 @@ public:
 	virtual void TumbleExecute(int deltaX, int deltaY);
 	virtual void TrackExecute(int deltaX, int deltaY);
 	virtual void DollyExecute(int deltaX, int deltaY);
+	virtual void HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand);
 
 protected:
 	void SendSystemKeys(HWND hTargetWnd, BOOL bDown);

@@ -314,6 +314,9 @@ BOOL BridgeMessage(I4C3DContext* pContext, int deltaX, int deltaY, LPCSTR lpszCo
 	} else if (_strcmpi(lpszCommand, "dolly") == 0) {
 		pContext->pController->DollyExecute(deltaX, deltaY);
 
+	} else {
+		return FALSE;
+
 	}
 	return TRUE;
 }

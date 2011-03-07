@@ -3,7 +3,8 @@
 
 extern TCHAR szTitle[MAX_LOADSTRING];
 extern TCHAR g_szIniFilePath[MAX_PATH];
-static void CreateSettingMap();
+static void RemoveWhiteSpace(LPTSTR szBuffer);
+static void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes);
 
 I4C3DControl::I4C3DControl(void)
 {
@@ -30,6 +31,14 @@ I4C3DControl::I4C3DControl(I4C3DContext* pContext)
 
 I4C3DControl::~I4C3DControl(void)
 {
+	std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
+	while (it != m_settingsMap.end()) {
+		free((void*)it->first);
+		free((void*)it->second);
+		it++;
+	}
+
+	m_settingsMap.clear();
 }
 
 void I4C3DControl::TumbleExecute(int deltaX, int deltaY)
@@ -121,6 +130,18 @@ void I4C3DControl::SendSystemKeys(HWND hTargetWnd, BOOL bDown)
 	}
 }
 
+void I4C3DControl::HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand)
+{
+	std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
+	while (it != m_settingsMap.end()) {
+		if (lstrcmpi(it->first, szCommand) == 0) {
+			VKPush(hTargetWnd, it->second);
+			break;
+		}
+		it++;
+	}
+}
+
 /////////////////////////////////////////////////////////////////////////
 
 BOOL I4C3DControl::CheckTargetState(void)
@@ -159,39 +180,123 @@ BOOL I4C3DControl::CheckTargetState(void)
 }
 
 void I4C3DControl::CreateSettingMap(LPCTSTR szSectionName) {
-	TCHAR szReturnedString[I4C3D_BUFFER_SIZE];
+	TCHAR* szReturnedString = (TCHAR*)calloc(I4C3D_BUFFER_SIZE, sizeof(TCHAR));
+	if (szReturnedString == NULL) {
+		I4C3DMisc::ReportError(_T("[ERROR] メモリが確保できません。終了します。"));
+		exit(1);
+	}
+
 	TCHAR szKey[I4C3D_BUFFER_SIZE];
 	TCHAR szValue[I4C3D_BUFFER_SIZE];
 
-	TCHAR* ptr = szReturnedString;
-	int ret;
+	TCHAR *pSrc, *pKey, *pValue;
+	DWORD ret;
+	DWORD nBufferSize = I4C3D_BUFFER_SIZE;
 
 	if (g_szIniFilePath[0] == _T('\0')) {
 		I4C3DMisc::GetModuleFileWithExtension(g_szIniFilePath, sizeof(g_szIniFilePath)/sizeof(g_szIniFilePath[0]), _T("ini"));
 	}
-	GetPrivateProfileSection(szSectionName, szReturnedString, sizeof(szReturnedString)/sizeof(szReturnedString[0]), g_szIniFilePath);
 
-	// 解析
-	do {
-		I4C3DMisc::ReportError(ptr);
-		ret = _stscanf_s(ptr, _T("%s=%s"), szKey, sizeof(szKey)/sizeof(szKey[0]), 
-			szValue, sizeof(szValue)/sizeof(szValue[0]));
-		{
-			TCHAR szBuffer[5];
-			_stprintf_s(szBuffer, _T("%d"), ret);
-			I4C3DMisc::ReportError(szBuffer);
-		}
-		if (ret != 2) {
-			I4C3DMisc::ReportError(szKey);
-			I4C3DMisc::ReportError(szValue);
+	for (;;) {
+		ret = GetPrivateProfileSection(szSectionName, szReturnedString, nBufferSize, g_szIniFilePath);
+
+		if (ret == nBufferSize-2) {	// メモリが足りない
+			szReturnedString = (TCHAR*)realloc(szReturnedString, nBufferSize*2);
+			if (szReturnedString == NULL) {
+				I4C3DMisc::ReportError(_T("[ERROR] メモリが確保できません。終了します。"));
+				exit(1);
+			}
+
+		} else {
 			break;
 		}
-		I4C3DMisc::LogDebugMessage(szKey);
-		I4C3DMisc::LogDebugMessage(szValue);
-		if (_tcsncicmp(szKey, _T("HOTKEY_"), 7) == 0) {
-			//TCHAR* pKey = (LPTSTR)calloc(lstrlen( sizeof(TCHAR)));
-			m_settingsMap.insert(std::map<LPCTSTR, LPCTSTR>::value_type(szKey, szValue));
+		nBufferSize *= 2;
+	}
+
+	pSrc = szReturnedString;
+	while (*pSrc != _T('\0')) {
+
+		pKey = szKey;
+		pValue = szValue;
+		while (*pSrc != _T('=')) {
+			*pKey++ = *pSrc++;
 		}
-		ptr = ptr + lstrlen(ptr);
-	} while (ret == 2);
+		*pKey = _T('\0');
+		pSrc++;	// =を読み飛ばし
+
+		while (*pSrc != _T('\0')) {
+			*pValue++ = *pSrc++;
+		}
+		*pValue = _T('\0');
+		pSrc++;	// '\0'読み飛ばし
+
+		RemoveWhiteSpace(szKey);
+		RemoveWhiteSpace(szValue);
+		if (_tcsncicmp(szKey, _T("HOTKEY_"), 7) == 0) {
+			TCHAR *pszKey	= (TCHAR*)calloc(lstrlen(szKey)-7, sizeof(TCHAR));
+			TCHAR *pszValue	= (TCHAR*)calloc(lstrlen(szValue), sizeof(TCHAR));
+			if (pszKey == NULL || pszValue == NULL) {
+				I4C3DMisc::ReportError(_T("[ERROR] メモリが確保できません。終了します。"));
+				exit(1);
+			}
+			lstrcpy(pszKey, szKey+7);
+			lstrcpy(pszValue, szValue);
+			m_settingsMap.insert(std::map<LPCTSTR, LPCTSTR>::value_type(pszKey, pszValue));
+		}
+	}
+
+	free(szReturnedString);
 }
+
+void RemoveWhiteSpace(LPTSTR szBuffer)
+{
+	TCHAR* pStart = szBuffer;
+	TCHAR* pEnd = szBuffer + lstrlen(szBuffer) - 1;
+	WORD wCharType = 0;
+
+	while (pStart < pEnd && GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, pStart, 1, &wCharType)) {
+		if (wCharType & C1_SPACE) {
+			pStart++;
+		} else {
+			break;
+		}
+	}
+
+	while (pStart < pEnd && GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, pEnd, 1, &wCharType)) {
+		if (wCharType & C1_SPACE) {
+			pEnd--;
+		} else {
+			break;
+		}
+	}
+
+	MoveMemory(szBuffer, pStart, pEnd - pStart + 1);
+	*(szBuffer + (pEnd - pStart + 1)) = _T('\0');
+}
+
+void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
+	LPCTSTR pType = _tcschr(szKeyTypes, _T('+'));
+	TCHAR szKey[32] = {0};
+	lstrcpyn(szKey, szKeyTypes, pType-szKeyTypes);
+	RemoveWhiteSpace(szKey);
+	I4C3DMisc::LogDebugMessage(szKey);
+	UINT vKey = VMGetVirtualKey(szKey);
+
+	if (vKey) {
+		VMVirtualKeyDown(hTargetWnd, vKey);
+	} else {
+		VMKeyDown(hTargetWnd, szKey[0]);
+	}
+
+	// 再帰的に次のキー入力
+	if (pType != NULL) {
+		VKPush(hTargetWnd, pType+1);
+	}
+
+	if (vKey) {
+		VMVirtualKeyUp(hTargetWnd, vKey);
+	} else {
+		VMKeyUp(hTargetWnd, szKey[0]);
+	}
+}
+

@@ -58,18 +58,13 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 		}
 	}
 
-	I4C3DMisc::ReportError(_T("Alias!!"));
-
 	CreateSettingMap(_T("Alias"));
-	I4C3DMisc::LogDebugMessage(_T("Alias----->"));
-	
-	std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
-	while (it != m_settingsMap.end()) {
-		I4C3DMisc::LogDebugMessage((*it).first);
-		I4C3DMisc::LogDebugMessage((*it).second);
-	}
-
-	I4C3DMisc::LogDebugMessage(_T("<-----Alias"));
+	//std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
+	//while (it != m_settingsMap.end()) {
+	//	I4C3DMisc::LogDebugMessage(it->first);
+	//	I4C3DMisc::LogDebugMessage(it->second);
+	//	it++;
+	//}
 }
 
 I4C3DAliasControl::~I4C3DAliasControl(void)

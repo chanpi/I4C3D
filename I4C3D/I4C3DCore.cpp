@@ -341,23 +341,17 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 
 					int count = 0;
 					do {
-						{
-							char buffer[5];
-							sprintf_s(buffer, 5, "[%d]", ++count);
-							I4C3DMisc::LogDebugMessageA(buffer);
-						}
-
 						// 電文解析
 						delta.x = delta.y = 0;
 						int ret = AnalyzeMessage(recvBuffer, szCommand, sizeof(szCommand), &delta, pChildContext->cTermination);
-						if (ret != 3) {
+						if (ret == 3 || (ret == 1 && !delta.x && !delta.y)) {
+							// コマンド送信のためSendMessage（deltaX, deltaY, szCommandが解放される前に処理を行う）
+							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, (WPARAM)&delta, (LPARAM)szCommand);
+
+						} else {
 							_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("電文解析に失敗しています : %d個"), ret);
 							I4C3DMisc::ReportError(_T("[ERROR] 電文解析に失敗しています。"));
 							break;
-
-						} else {
-							// コマンド送信のためSendMessage（deltaX, deltaY, szCommandが解放される前に処理を行う）
-							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, (WPARAM)&delta, (LPARAM)szCommand);
 						}
 
 						if (pTermination == recvBuffer + totalRecvBytes - 1) {
@@ -372,29 +366,21 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 								I4C3DMisc::LogDebugMessage(szError);
 							}
 							totalRecvBytes -= (pTermination - recvBuffer + 1);
-							{
-								I4C3DMisc::LogDebugMessageA("//-------------------------------- before");
-								recvBuffer[1023] = '\0';
-								I4C3DMisc::LogDebugMessageA(recvBuffer);
-								I4C3DMisc::LogDebugMessageA("\r\n--------------------------------//");
-								recvBuffer[1023] = 0xFF;
-							}
 							MoveMemory(recvBuffer, pTermination+1, nCopySize);
 							FillMemory(recvBuffer + nCopySize, sizeof(recvBuffer)/sizeof(recvBuffer[0]) - nCopySize, 0xFF);
-							{
-								I4C3DMisc::LogDebugMessageA("//-------------------------------- after");
-								recvBuffer[1023] = '\0';
-								I4C3DMisc::LogDebugMessageA(recvBuffer);
-								I4C3DMisc::LogDebugMessageA("\r\n--------------------------------//");
-								recvBuffer[1023] = 0xFF;
-							}
+							//{
+							//	I4C3DMisc::LogDebugMessageA("//-------------------------------- after");
+							//	recvBuffer[1023] = '\0';
+							//	I4C3DMisc::LogDebugMessageA(recvBuffer);
+							//	I4C3DMisc::LogDebugMessageA("\r\n--------------------------------//");
+							//	recvBuffer[1023] = 0xFF;
+							//}
 
 						} else {
 							bBreak = TRUE;
 							I4C3DMisc::ReportError(_T("[ERROR] 受信メッセージの解析に失敗しています。"));
 							break;
 						}
-					//} while ((pTermination = (LPCSTR)memchr(recvBuffer+totalRecvBytes, pChildContext->cTermination, nBytes)) != NULL);
 					} while ((pTermination = (LPCSTR)memchr(recvBuffer, pChildContext->cTermination, totalRecvBytes)) != NULL);
 
 				}
