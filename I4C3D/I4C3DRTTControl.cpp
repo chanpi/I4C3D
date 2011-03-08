@@ -2,6 +2,12 @@
 #include "I4C3DRTTControl.h"
 
 extern TCHAR g_szIniFilePath[MAX_PATH];
+static BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam);
+
+typedef struct {
+	HWND hChild;
+	LPCTSTR szWindowTitle;
+} RTTChildWndParam;
 
 I4C3DRTTControl::I4C3DRTTControl(void)
 {
@@ -18,11 +24,25 @@ I4C3DRTTControl::I4C3DRTTControl(void)
 I4C3DRTTControl::I4C3DRTTControl(I4C3DContext* pContext)
 {
 	m_hTargetParentWnd	= pContext->hTargetParentWnd;
-	m_hTargetChildWnd	= NULL;	// TODO!!!!
+	m_hTargetChildWnd	= NULL;
 	m_basePos.x			= 0;
 	m_basePos.y			= 0;
 	m_currentPos.x		= 0;
 	m_currentPos.y		= 0;
+
+	EnumChildWindows(m_hTargetParentWnd, EnumChildProc, (LPARAM)&m_hTargetChildWnd);
+	//if (m_hTargetChildWnd == NULL) {
+	//	m_hTargetChildWnd = (HWND)0x1E06C8;;
+	//	{
+	//		TCHAR szError[I4C3D_BUFFER_SIZE];
+	//		_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("%X"), m_hTargetChildWnd);
+	//		I4C3DMisc::ReportError(szError);
+	//	}
+	//}
+	if (m_hTargetChildWnd == NULL) {
+		I4C3DMisc::ReportError(_T("[ERROR] 子ウィンドウが取得できません。\n設定ファイルを確認してください。"));
+		DestroyWindow(pContext->hMyWnd);
+	}
 
 	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 
@@ -58,7 +78,6 @@ I4C3DRTTControl::I4C3DRTTControl(I4C3DContext* pContext)
 			break;
 		}
 	} while (pType != NULL);
-
 
 	CreateSettingMap(_T("RTT"));
 }
@@ -96,4 +115,24 @@ void I4C3DRTTControl::DollyExecute(int deltaX, int deltaY)
 void I4C3DRTTControl::HotkeyExecute(LPCTSTR szCommand)
 {
 	I4C3DControl::HotkeyExecute(m_hTargetParentWnd, szCommand);
+}
+
+BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
+{
+	TCHAR szWindowTitle[I4C3D_BUFFER_SIZE];
+	TCHAR szClassTitle[I4C3D_BUFFER_SIZE];
+	GetWindowText(hWnd, szWindowTitle, sizeof(szWindowTitle)/sizeof(szWindowTitle[0]));
+	GetClassName(hWnd, szClassTitle, sizeof(szClassTitle)/sizeof(szClassTitle[0]));
+
+	{
+		TCHAR szError[I4C3D_BUFFER_SIZE];
+		_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("%s %s [%X]"), szWindowTitle, szClassTitle, hWnd);
+		I4C3DMisc::LogDebugMessage(szError);
+	}
+
+	if (!lstrcmpi(_T("untitled"), szWindowTitle) && !lstrcmpi(_T("QWidget"), szClassTitle)) {
+		*(HWND*)lParam = hWnd;
+		return FALSE;
+	}
+	return TRUE;
 }

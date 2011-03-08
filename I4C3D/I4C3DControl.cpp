@@ -42,7 +42,7 @@ I4C3DControl::~I4C3DControl(void)
 
 void I4C3DControl::TumbleExecute(int deltaX, int deltaY)
 {
-	VMMouseMessage mouseMessage;
+	VMMouseMessage mouseMessage = {0};
 
 	if (!CheckTargetState()) {
 		return;
@@ -54,13 +54,18 @@ void I4C3DControl::TumbleExecute(int deltaX, int deltaY)
 	m_currentPos.x				+= deltaX;
 	m_currentPos.y				+= deltaY;
 	mouseMessage.dragEndPos		= m_currentPos;
-	mouseMessage.uKeyState		= MK_SHIFT;
+	if (m_ctrl) {
+		mouseMessage.uKeyState = MK_CONTROL;
+	}
+	if (m_shift) {
+		mouseMessage.uKeyState |= MK_SHIFT;
+	}
 	VMMouseDrag(&mouseMessage);
 }
 
 void I4C3DControl::TrackExecute(int deltaX, int deltaY)
 {
-	VMMouseMessage mouseMessage;
+	VMMouseMessage mouseMessage = {0};
 
 	if (!CheckTargetState()) {
 		return;
@@ -72,13 +77,18 @@ void I4C3DControl::TrackExecute(int deltaX, int deltaY)
 	m_currentPos.x				+= deltaX;
 	m_currentPos.y				+= deltaY;
 	mouseMessage.dragEndPos		= m_currentPos;
-	mouseMessage.uKeyState		= MK_SHIFT;
+	if (m_ctrl) {
+		mouseMessage.uKeyState = MK_CONTROL;
+	}
+	if (m_shift) {
+		mouseMessage.uKeyState |= MK_SHIFT;
+	}
 	VMMouseDrag(&mouseMessage);
 }
 
 void I4C3DControl::DollyExecute(int deltaX, int deltaY)
 {
-	VMMouseMessage mouseMessage;
+	VMMouseMessage mouseMessage = {0};
 
 	if (!CheckTargetState()) {
 		return;
@@ -90,7 +100,12 @@ void I4C3DControl::DollyExecute(int deltaX, int deltaY)
 	m_currentPos.x				+= deltaX;
 	m_currentPos.y				+= deltaY;
 	mouseMessage.dragEndPos		= m_currentPos;
-	mouseMessage.uKeyState		= MK_SHIFT;
+	if (m_ctrl) {
+		mouseMessage.uKeyState = MK_CONTROL;
+	}
+	if (m_shift) {
+		mouseMessage.uKeyState |= MK_SHIFT;
+	}
 	VMMouseDrag(&mouseMessage);
 }
 
