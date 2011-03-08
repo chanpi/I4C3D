@@ -339,19 +339,19 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 						continue;
 					}
 
-					int count = 0;
 					do {
 						// 電文解析
 						delta.x = delta.y = 0;
 						int ret = AnalyzeMessage(recvBuffer, szCommand, sizeof(szCommand), &delta, pChildContext->cTermination);
-						if (ret == 3 || (ret == 1 && !delta.x && !delta.y)) {
+						if (ret == 3) {
 							// コマンド送信のためSendMessage（deltaX, deltaY, szCommandが解放される前に処理を行う）
 							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, (WPARAM)&delta, (LPARAM)szCommand);
 
 						} else {
-							_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("電文解析に失敗しています : %d個"), ret);
-							I4C3DMisc::ReportError(_T("[ERROR] 電文解析に失敗しています。"));
-							break;
+							MoveMemory(szCommand, recvBuffer, pTermination-recvBuffer);
+							szCommand[pTermination-recvBuffer] = '\0';
+							I4C3DMisc::LogDebugMessageA(szCommand);
+							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, (WPARAM)&delta, (LPARAM)szCommand);
 						}
 
 						if (pTermination == recvBuffer + totalRecvBytes - 1) {

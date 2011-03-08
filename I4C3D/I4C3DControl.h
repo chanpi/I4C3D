@@ -14,9 +14,10 @@ public:
 	virtual void TumbleExecute(int deltaX, int deltaY);
 	virtual void TrackExecute(int deltaX, int deltaY);
 	virtual void DollyExecute(int deltaX, int deltaY);
-	virtual void HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand);
+	virtual void HotkeyExecute(LPCTSTR szCommand);
 
 protected:
+	void HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand);
 	void SendSystemKeys(HWND hTargetWnd, BOOL bDown);
 	void CreateSettingMap(LPCTSTR szSectionName);
 	HWND m_hTargetParentWnd;

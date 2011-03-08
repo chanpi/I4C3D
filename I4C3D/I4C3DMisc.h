@@ -12,5 +12,7 @@ public:
 	static void ReportError(LPCTSTR lpszMessage);
 	static void LogDebugMessage(LPCTSTR lpszMessage);
 	static void LogDebugMessageA(LPCSTR lpszMessage);
+
+	static void RemoveWhiteSpace(LPTSTR szBuffer);
 };
 

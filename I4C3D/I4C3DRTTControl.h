@@ -12,5 +12,6 @@ public:
 	void TumbleExecute(int deltaX, int deltaY);
 	void TrackExecute(int deltaX, int deltaY);
 	void DollyExecute(int deltaX, int deltaY);
+	void HotkeyExecute(LPCTSTR szCommand);
 };
 

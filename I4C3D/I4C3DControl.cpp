@@ -3,7 +3,6 @@
 
 extern TCHAR szTitle[MAX_LOADSTRING];
 extern TCHAR g_szIniFilePath[MAX_PATH];
-static void RemoveWhiteSpace(LPTSTR szBuffer);
 static void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes);
 
 I4C3DControl::I4C3DControl(void)
@@ -130,6 +129,11 @@ void I4C3DControl::SendSystemKeys(HWND hTargetWnd, BOOL bDown)
 	}
 }
 
+void I4C3DControl::HotkeyExecute(LPCTSTR szCommand)
+{
+	HotkeyExecute(m_hTargetParentWnd, szCommand);
+}
+
 void I4C3DControl::HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand)
 {
 	std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
@@ -230,8 +234,8 @@ void I4C3DControl::CreateSettingMap(LPCTSTR szSectionName) {
 		*pValue = _T('\0');
 		pSrc++;	// '\0'読み飛ばし
 
-		RemoveWhiteSpace(szKey);
-		RemoveWhiteSpace(szValue);
+		I4C3DMisc::RemoveWhiteSpace(szKey);
+		I4C3DMisc::RemoveWhiteSpace(szValue);
 		if (_tcsncicmp(szKey, _T("HOTKEY_"), 7) == 0) {
 			TCHAR *pszKey	= (TCHAR*)calloc(lstrlen(szKey)-7, sizeof(TCHAR));
 			TCHAR *pszValue	= (TCHAR*)calloc(lstrlen(szValue), sizeof(TCHAR));
@@ -248,44 +252,31 @@ void I4C3DControl::CreateSettingMap(LPCTSTR szSectionName) {
 	free(szReturnedString);
 }
 
-void RemoveWhiteSpace(LPTSTR szBuffer)
-{
-	TCHAR* pStart = szBuffer;
-	TCHAR* pEnd = szBuffer + lstrlen(szBuffer) - 1;
-	WORD wCharType = 0;
-
-	while (pStart < pEnd && GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, pStart, 1, &wCharType)) {
-		if (wCharType & C1_SPACE) {
-			pStart++;
-		} else {
-			break;
-		}
-	}
-
-	while (pStart < pEnd && GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, pEnd, 1, &wCharType)) {
-		if (wCharType & C1_SPACE) {
-			pEnd--;
-		} else {
-			break;
-		}
-	}
-
-	MoveMemory(szBuffer, pStart, pEnd - pStart + 1);
-	*(szBuffer + (pEnd - pStart + 1)) = _T('\0');
-}
-
 void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 	LPCTSTR pType = _tcschr(szKeyTypes, _T('+'));
-	TCHAR szKey[32] = {0};
-	lstrcpyn(szKey, szKeyTypes, pType-szKeyTypes);
-	RemoveWhiteSpace(szKey);
+	TCHAR szKey[I4C3D_BUFFER_SIZE] = {0};
+	if (pType != NULL) {
+		lstrcpyn(szKey, szKeyTypes, pType-szKeyTypes+1);
+	} else {
+		lstrcpy(szKey, szKeyTypes);
+	}
+	I4C3DMisc::RemoveWhiteSpace(szKey);
 	I4C3DMisc::LogDebugMessage(szKey);
 	UINT vKey = VMGetVirtualKey(szKey);
 
-	if (vKey) {
-		VMVirtualKeyDown(hTargetWnd, vKey);
-	} else {
+	switch (vKey) {
+	case 0:
 		VMKeyDown(hTargetWnd, szKey[0]);
+		break;
+
+	case VK_CONTROL:
+	case VK_MENU:
+	case VK_SHIFT:
+		VMVirtualKeyDown(hTargetWnd, vKey);
+		break;
+
+	default:
+		VMKeyDown(hTargetWnd, vKey);
 	}
 
 	// 再帰的に次のキー入力
@@ -293,10 +284,19 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 		VKPush(hTargetWnd, pType+1);
 	}
 
-	if (vKey) {
-		VMVirtualKeyUp(hTargetWnd, vKey);
-	} else {
+	switch (vKey) {
+	case 0:
 		VMKeyUp(hTargetWnd, szKey[0]);
+		break;
+
+	case VK_CONTROL:
+	case VK_MENU:
+	case VK_SHIFT:
+		VMVirtualKeyUp(hTargetWnd, vKey);
+		break;
+
+	default:
+		VMKeyUp(hTargetWnd, vKey);
 	}
 }
 

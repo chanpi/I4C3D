@@ -315,7 +315,13 @@ BOOL BridgeMessage(I4C3DContext* pContext, int deltaX, int deltaY, LPCSTR lpszCo
 		pContext->pController->DollyExecute(deltaX, deltaY);
 
 	} else {
-		return FALSE;
+#ifdef _UNICODE
+		TCHAR wszCommand[I4C3D_BUFFER_SIZE];
+		MultiByteToWideChar(CP_ACP, 0, lpszCommand, -1, wszCommand, sizeof(wszCommand)/sizeof(wszCommand[0]));
+		pContext->pController->HotkeyExecute(wszCommand);
+#else
+		pContext->pController->HotkeyExecute(lpszCommand);
+#endif
 
 	}
 	return TRUE;

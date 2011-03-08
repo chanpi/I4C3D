@@ -111,3 +111,29 @@ void I4C3DMisc::LogDebugMessageA(LPCSTR lpszMessage)
 		CloseHandle(hLogFile);
 	}
 }
+
+void I4C3DMisc::RemoveWhiteSpace(LPTSTR szBuffer)
+{
+	TCHAR* pStart = szBuffer;
+	TCHAR* pEnd = szBuffer + lstrlen(szBuffer) - 1;
+	WORD wCharType = 0;
+
+	while (pStart < pEnd && GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, pStart, 1, &wCharType)) {
+		if (wCharType & C1_SPACE) {
+			pStart++;
+		} else {
+			break;
+		}
+	}
+
+	while (pStart < pEnd && GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, pEnd, 1, &wCharType)) {
+		if (wCharType & C1_SPACE) {
+			pEnd--;
+		} else {
+			break;
+		}
+	}
+
+	MoveMemory(szBuffer, pStart, pEnd - pStart + 1);
+	*(szBuffer + (pEnd - pStart + 1)) = _T('\0');
+}

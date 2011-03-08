@@ -36,11 +36,22 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 
 	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
 
-	TCHAR tempBuffer[5] = {0};
-	GetPrivateProfileString(_T("Alias"), _T("MODIFIER_KEY"), _T("AS"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szIniFilePath);
-	int count = lstrlen(tempBuffer);
-	for (int i = 0; i < count; i++) {
-		switch (tempBuffer[i]) {
+	TCHAR tempBuffer[I4C3D_BUFFER_SIZE] = {0};
+	GetPrivateProfileString(_T("Alias"), _T("MODIFIER_KEY"), _T("Alt+Shift"), tempBuffer, sizeof(tempBuffer)/sizeof(tempBuffer[0]), g_szIniFilePath);
+	
+	LPCTSTR pType = NULL;
+	LPCTSTR pTempBuffer = tempBuffer;
+	do {
+		TCHAR szKey[I4C3D_BUFFER_SIZE] = {0};
+		pType = _tcschr(pTempBuffer, _T('+'));
+		if (pType != NULL) {
+			lstrcpyn(szKey, pTempBuffer, pType-pTempBuffer+1);
+			pTempBuffer = pType+1;
+		} else {
+			lstrcpy(szKey, pTempBuffer);
+		}
+		I4C3DMisc::RemoveWhiteSpace(szKey);
+		switch (szKey[0]) {
 		case _T('C'):
 		case _T('c'):
 			m_ctrl = TRUE;
@@ -56,15 +67,9 @@ I4C3DAliasControl::I4C3DAliasControl(I4C3DContext* pContext)
 			m_alt = TRUE;
 			break;
 		}
-	}
+	} while (pType != NULL);
 
 	CreateSettingMap(_T("Alias"));
-	//std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
-	//while (it != m_settingsMap.end()) {
-	//	I4C3DMisc::LogDebugMessage(it->first);
-	//	I4C3DMisc::LogDebugMessage(it->second);
-	//	it++;
-	//}
 }
 
 I4C3DAliasControl::~I4C3DAliasControl(void)
@@ -75,6 +80,8 @@ I4C3DAliasControl::~I4C3DAliasControl(void)
 
 void I4C3DAliasControl::TumbleExecute(int deltaX, int deltaY)
 {
+	I4C3DMisc::LogDebugMessage(_T("Tumble"));
+
 	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
 	SendSystemKeys(m_hTargetParentWnd, FALSE);
@@ -92,6 +99,11 @@ void I4C3DAliasControl::DollyExecute(int deltaX, int deltaY)
 	SendSystemKeys(m_hTargetParentWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
 	SendSystemKeys(m_hTargetParentWnd, FALSE);
+}
+
+void I4C3DAliasControl::HotkeyExecute(LPCTSTR szCommand)
+{
+	I4C3DControl::HotkeyExecute(m_hTargetParentWnd, szCommand);
 }
 
 BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
