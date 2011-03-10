@@ -13,5 +13,8 @@ public:
 	void TrackExecute(int deltaX, int deltaY);
 	void DollyExecute(int deltaX, int deltaY);
 	void HotkeyExecute(LPCTSTR szCommand);
+
+private:
+	HWND m_hKeyInputWnd;
 };
 

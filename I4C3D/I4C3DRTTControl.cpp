@@ -2,12 +2,8 @@
 #include "I4C3DRTTControl.h"
 
 extern TCHAR g_szIniFilePath[MAX_PATH];
-static BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam);
-
-typedef struct {
-	HWND hChild;
-	LPCTSTR szWindowTitle;
-} RTTChildWndParam;
+static BOOL CALLBACK EnumChildProcForKeyInput(HWND hWnd, LPARAM lParam);
+static BOOL CALLBACK EnumChildProcForMouseInput(HWND hWnd, LPARAM lParam);
 
 I4C3DRTTControl::I4C3DRTTControl(void)
 {
@@ -18,6 +14,8 @@ I4C3DRTTControl::I4C3DRTTControl(void)
 	m_currentPos.x		= 0;
 	m_currentPos.y		= 0;
 	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
+
+	m_hKeyInputWnd		= NULL;
 }
 
 
@@ -29,19 +27,22 @@ I4C3DRTTControl::I4C3DRTTControl(I4C3DContext* pContext)
 	m_basePos.y			= 0;
 	m_currentPos.x		= 0;
 	m_currentPos.y		= 0;
+	m_hKeyInputWnd		= NULL;
 
-	EnumChildWindows(m_hTargetParentWnd, EnumChildProc, (LPARAM)&m_hTargetChildWnd);
-	//if (m_hTargetChildWnd == NULL) {
-	//	m_hTargetChildWnd = (HWND)0x1E06C8;;
-	//	{
-	//		TCHAR szError[I4C3D_BUFFER_SIZE];
-	//		_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("%X"), m_hTargetChildWnd);
-	//		I4C3DMisc::ReportError(szError);
-	//	}
-	//}
-	if (m_hTargetChildWnd == NULL) {
-		I4C3DMisc::ReportError(_T("[ERROR] 子ウィンドウが取得できません。\n設定ファイルを確認してください。"));
+	// キー入力ウィンドウを取得
+	EnumChildWindows(m_hTargetParentWnd, EnumChildProcForKeyInput, (LPARAM)&m_hKeyInputWnd);
+	if (m_hKeyInputWnd == NULL) {
+		I4C3DMisc::ReportError(_T("[ERROR] キー入力ウィンドウが取得できません。\n設定ファイルを確認してください。"));
 		DestroyWindow(pContext->hMyWnd);
+		return;
+	}
+
+	// マウス入力ウィンドウを取得
+	EnumChildWindows(m_hKeyInputWnd, EnumChildProcForMouseInput, (LPARAM)&m_hTargetChildWnd);
+	if (m_hTargetChildWnd == NULL) {
+		I4C3DMisc::ReportError(_T("[ERROR] マウス入力ウィンドウが取得できません。\n設定ファイルを確認してください。"));
+		DestroyWindow(pContext->hMyWnd);
+		return;
 	}
 
 	m_ctrl = m_alt = m_shift = m_bSyskeyDown = FALSE;
@@ -85,54 +86,58 @@ I4C3DRTTControl::I4C3DRTTControl(I4C3DContext* pContext)
 
 I4C3DRTTControl::~I4C3DRTTControl(void)
 {
-	SendSystemKeys(m_hTargetParentWnd, FALSE);
+	SendSystemKeys(m_hKeyInputWnd, FALSE);
 }
 
 // ctrl + マウス左ドラッグ
 void I4C3DRTTControl::TumbleExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	SendSystemKeys(m_hKeyInputWnd, TRUE);
 	I4C3DControl::TumbleExecute(deltaX, deltaY);
-	SendSystemKeys(m_hTargetParentWnd, FALSE);
+	SendSystemKeys(m_hKeyInputWnd, FALSE);
 }
 
 // ctrl + マウス中ドラッグ
 void I4C3DRTTControl::TrackExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	SendSystemKeys(m_hKeyInputWnd, TRUE);
 	I4C3DControl::TrackExecute(deltaX, deltaY);
-	SendSystemKeys(m_hTargetParentWnd, FALSE);
+	SendSystemKeys(m_hKeyInputWnd, FALSE);
 }
 
 // ctrl + マウス右ドラッグ
 void I4C3DRTTControl::DollyExecute(int deltaX, int deltaY)
 {
-	SendSystemKeys(m_hTargetParentWnd, TRUE);
+	SendSystemKeys(m_hKeyInputWnd, TRUE);
 	I4C3DControl::DollyExecute(deltaX, deltaY);
-	SendSystemKeys(m_hTargetParentWnd, FALSE);
+	SendSystemKeys(m_hKeyInputWnd, FALSE);
 }
 
 void I4C3DRTTControl::HotkeyExecute(LPCTSTR szCommand)
 {
-	I4C3DControl::HotkeyExecute(m_hTargetParentWnd, szCommand);
+	I4C3DControl::HotkeyExecute(m_hKeyInputWnd, szCommand);
 }
 
-BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
+BOOL CALLBACK EnumChildProcForKeyInput(HWND hWnd, LPARAM lParam)
 {
 	TCHAR szWindowTitle[I4C3D_BUFFER_SIZE];
-	TCHAR szClassTitle[I4C3D_BUFFER_SIZE];
 	GetWindowText(hWnd, szWindowTitle, sizeof(szWindowTitle)/sizeof(szWindowTitle[0]));
-	GetClassName(hWnd, szClassTitle, sizeof(szClassTitle)/sizeof(szClassTitle[0]));
 
-	{
-		TCHAR szError[I4C3D_BUFFER_SIZE];
-		_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("%s %s [%X]"), szWindowTitle, szClassTitle, hWnd);
-		I4C3DMisc::LogDebugMessage(szError);
-	}
+	//{
+	//	TCHAR szError[I4C3D_BUFFER_SIZE];
+	//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("%s [%X]"), szWindowTitle, hWnd);
+	//	I4C3DMisc::LogDebugMessage(szError);
+	//}
 
-	if (!lstrcmpi(_T("untitled"), szWindowTitle) && !lstrcmpi(_T("QWidget"), szClassTitle)) {
+	if (!lstrcmpi(_T("untitled"), szWindowTitle) /*&& !lstrcmpi(_T("QWidget"), szClassTitle)*/) {
 		*(HWND*)lParam = hWnd;
 		return FALSE;
 	}
+	return TRUE;
+}
+
+BOOL CALLBACK EnumChildProcForMouseInput(HWND hWnd, LPARAM lParam)
+{
+	*(HWND*)lParam = hWnd;
 	return TRUE;
 }

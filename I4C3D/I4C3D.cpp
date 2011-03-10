@@ -93,6 +93,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_I4C3D));
 
+	//{
+	//	TCHAR szError[256];
+	//	_stprintf_s(szError, 256, _T("%u %d %x"), _T('U'), _T('U'), _T('u'));
+	//	I4C3DMisc::ReportError(szError);
+	//}
+
 	// メイン メッセージ ループ:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
