@@ -157,6 +157,7 @@ void I4C3DControl::HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand)
 			SetWindowPos(m_hTargetParentWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 			SetWindowPos(m_hTargetParentWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
+			SetForegroundWindow(hTargetWnd);
 			VKPush(hTargetWnd, it->second);
 			break;
 		}
@@ -283,13 +284,12 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 
 	switch (vKey) {
 	case 0:
-		{
-			TCHAR szError[I4C3D_BUFFER_SIZE];
-			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Ctrl‚ª%s [%s]"), GetKeyState(VK_CONTROL) < 0 ? _T("DOWN"):_T("UP"), szKey);
-			I4C3DMisc::LogDebugMessage(szError);
-		}
+		//{
+		//	TCHAR szError[I4C3D_BUFFER_SIZE];
+		//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Ctrl‚ª%s [%s]"), GetKeyState(VK_CONTROL) < 0 ? _T("DOWN"):_T("UP"), szKey);
+		//	I4C3DMisc::LogDebugMessage(szError);
+		//}
 		VMKeyDown(hTargetWnd, szKey[0]);
-		//VMVirtualKeyDown(hTargetWnd, szKey[0]);
 		break;
 
 	case VK_CONTROL:
@@ -299,7 +299,6 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 		break;
 
 	default:
-		//VMVirtualKeyDown(hTargetWnd, vKey);
 		VMKeyDown(hTargetWnd, vKey);
 	}
 
@@ -311,7 +310,6 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 	switch (vKey) {
 	case 0:
 		VMKeyUp(hTargetWnd, szKey[0]);
-		//VMVirtualKeyUp(hTargetWnd, szKey[0]);
 		break;
 
 	case VK_CONTROL:
@@ -321,7 +319,6 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 		break;
 
 	default:
-		//VMVirtualKeyUp(hTargetWnd, vKey);
 		VMKeyUp(hTargetWnd, vKey);
 	}
 }
