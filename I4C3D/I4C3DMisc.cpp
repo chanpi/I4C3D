@@ -74,6 +74,7 @@ void I4C3DMisc::LogDebugMessage(LPCTSTR lpszMessage)
 			TCHAR szError[I4C3D_BUFFER_SIZE];
 			_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("[ERROR] ログファイルのオープンに失敗しています。: %d"), GetLastError());
 			ReportError(szError);
+			ReportError(lpszMessage);
 			return;
 		}
 

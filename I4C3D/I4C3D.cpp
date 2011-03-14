@@ -205,7 +205,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_CREATE:
-		I4C3DMisc::LogDebugMessage(_T("--- start ---"));
 		context.hMyWnd = hWnd;
 
 		if (!core.Start(&context)) {
@@ -271,7 +270,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			delete context.pController;
 			context.pController = NULL;
 		}
-		I4C3DMisc::LogDebugMessage(_T("--- end ---"));
 		
 		PostQuitMessage(0);
 		break;
@@ -322,7 +320,7 @@ BOOL BridgeMessage(I4C3DContext* pContext, int deltaX, int deltaY, LPCSTR lpszCo
 
 	} else {
 #ifdef _UNICODE
-		TCHAR wszCommand[I4C3D_BUFFER_SIZE];
+		TCHAR wszCommand[I4C3D_BUFFER_SIZE] = {0};
 		MultiByteToWideChar(CP_ACP, 0, lpszCommand, -1, wszCommand, sizeof(wszCommand)/sizeof(wszCommand[0]));
 		pContext->pController->HotkeyExecute(wszCommand);
 #else

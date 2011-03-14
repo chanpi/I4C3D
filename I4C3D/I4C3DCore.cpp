@@ -299,8 +299,12 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 			break;
 		}
 
+		I4C3DMisc::LogDebugMessage(_T("........"));
 		dwResult = WSAWaitForMultipleEvents(2, hEventArray, FALSE, WSA_INFINITE, FALSE);
+		I4C3DMisc::LogDebugMessage(_T("........!!"));
+
 		if (dwResult == WSA_WAIT_FAILED) {
+			I4C3DMisc::LogDebugMessage(_T("[ERROR] WSAWaitForMultipleEvents : WSA_WAIT_FAILED"));
 			break;
 		}
 
@@ -312,9 +316,14 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 			}
 
 			if (events.lNetworkEvents & FD_CLOSE) {
+				//I4C3DMisc::LogDebugMessage(_T("クライアントがcloseしました。"));
 				break;
 
 			} else if (events.lNetworkEvents & FD_READ) {
+				{
+					_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("FD_READ: %d"), events.iErrorCode[FD_READ_BIT]);
+					I4C3DMisc::LogDebugMessage(szError);
+				}
 				nBytes = recv(pChildContext->clientSocket, recvBuffer + totalRecvBytes, sizeof(recvBuffer) - totalRecvBytes, 0);
 
 				if (nBytes == SOCKET_ERROR) {
@@ -324,10 +333,10 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 
 				} else if (nBytes > 0) {
 					LPCSTR pTermination = (LPCSTR)memchr(recvBuffer+totalRecvBytes, pChildContext->cTermination, nBytes);
-					{
-						_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("total:[%d -> %d] bytes [%d]"), totalRecvBytes, totalRecvBytes + nBytes, pTermination - recvBuffer);
-						I4C3DMisc::LogDebugMessage(szError);
-					}
+					//{
+					//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("total:[%d -> %d] bytes [%d]"), totalRecvBytes, totalRecvBytes + nBytes, pTermination - recvBuffer);
+					//	I4C3DMisc::LogDebugMessage(szError);
+					//}
 					totalRecvBytes += nBytes;
 
 					// 終端文字が見つからない場合、バッファをクリア
@@ -336,6 +345,8 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 							FillMemory(recvBuffer, sizeof(recvBuffer), 0xFF);
 							totalRecvBytes = 0;
 						}
+						ResetEvent(hEvent);
+						I4C3DMisc::LogDebugMessage(_T("continue..."));
 						continue;
 					}
 
@@ -352,6 +363,7 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 							szCommand[pTermination-recvBuffer] = '\0';
 							I4C3DMisc::LogDebugMessageA(szCommand);
 							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, (WPARAM)&delta, (LPARAM)szCommand);
+							szCommand[pTermination-recvBuffer] = 0xFF;
 						}
 
 						if (pTermination == recvBuffer + totalRecvBytes - 1) {
@@ -368,27 +380,30 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 							totalRecvBytes -= (pTermination - recvBuffer + 1);
 							MoveMemory(recvBuffer, pTermination+1, nCopySize);
 							FillMemory(recvBuffer + nCopySize, sizeof(recvBuffer)/sizeof(recvBuffer[0]) - nCopySize, 0xFF);
-							//{
-							//	I4C3DMisc::LogDebugMessageA("//-------------------------------- after");
-							//	recvBuffer[1023] = '\0';
-							//	I4C3DMisc::LogDebugMessageA(recvBuffer);
-							//	I4C3DMisc::LogDebugMessageA("\r\n--------------------------------//");
-							//	recvBuffer[1023] = 0xFF;
-							//}
+							{
+								I4C3DMisc::LogDebugMessageA("//-------------------------------- after");
+								recvBuffer[1023] = '\0';
+								I4C3DMisc::LogDebugMessageA(recvBuffer);
+								I4C3DMisc::LogDebugMessageA("\r\n--------------------------------//");
+								recvBuffer[1023] = 0xFF;
+							}
 
 						} else {
 							bBreak = TRUE;
 							I4C3DMisc::ReportError(_T("[ERROR] 受信メッセージの解析に失敗しています。"));
 							break;
 						}
-					} while ((pTermination = (LPCSTR)memchr(recvBuffer, pChildContext->cTermination, totalRecvBytes)) != NULL);
 
+					} while ((pTermination = (LPCSTR)memchr(recvBuffer, pChildContext->cTermination, totalRecvBytes)) != NULL);
+					//I4C3DMisc::LogDebugMessage(_T("解析終了。"));
 				}
 			}
 
 			ResetEvent(hEvent);
+			I4C3DMisc::LogDebugMessage(_T("--- RESET ---"));
 		} else if (dwResult - WSA_WAIT_EVENT_0 == 1) {
 			// pChildContext->pContext->hStopEvent に終了イベントがセットされた
+			I4C3DMisc::LogDebugMessage(_T("Closeが指定されました。"));
 			break;
 		}
 	}

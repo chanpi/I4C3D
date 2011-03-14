@@ -153,12 +153,37 @@ void I4C3DControl::HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand)
 {
 	std::map<LPCTSTR, LPCTSTR>::iterator it = m_settingsMap.begin();
 	while (it != m_settingsMap.end()) {
+
 		if (lstrcmpi(it->first, szCommand) == 0) {
 			SetWindowPos(m_hTargetParentWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 			SetWindowPos(m_hTargetParentWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
-			SetForegroundWindow(hTargetWnd);
-			VKPush(hTargetWnd, it->second);
+			SetForegroundWindow(m_hTargetParentWnd);
+
+			WINDOWINFO wi;
+			ZeroMemory(&wi, sizeof(wi));
+			wi.cbSize = sizeof(wi);
+			GetWindowInfo(m_hTargetParentWnd, &wi);
+			if (wi.dwWindowStatus) {
+				I4C3DMisc::LogDebugMessage(_T("Active ^^"));
+				VKPush(m_hTargetParentWnd, it->second);
+
+			} else {
+				// ƒŠƒgƒ‰ƒC
+				I4C3DMisc::LogDebugMessage(_T("Not Active ><"));
+				SetForegroundWindow(m_hTargetParentWnd);
+
+				//ZeroMemory(&wi, sizeof(wi));
+				//wi.cbSize = sizeof(wi);
+				//GetWindowInfo(m_hTargetParentWnd, &wi);
+
+				//if (wi.dwWindowStatus) {
+				//	VKPush(m_hTargetParentWnd, it->second);
+				//}
+			}
+
+			//SetForegroundWindow(hTargetWnd);
+			//VKPush(hTargetWnd, it->second);
 			break;
 		}
 		it++;
@@ -286,7 +311,7 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 	case 0:
 		//{
 		//	TCHAR szError[I4C3D_BUFFER_SIZE];
-		//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Ctrl‚ª%s [%s]"), GetKeyState(VK_CONTROL) < 0 ? _T("DOWN"):_T("UP"), szKey);
+		//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Ctrl‚ª%s Alt‚ª%s[%s]"), GetKeyState(VK_CONTROL) < 0 ? _T("DOWN"):_T("UP"), GetKeyState(VK_MENU) < 0 ? _T("DOWN"):_T("UP"), szKey);
 		//	I4C3DMisc::LogDebugMessage(szError);
 		//}
 		VMKeyDown(hTargetWnd, szKey[0]);
@@ -295,6 +320,11 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 	case VK_CONTROL:
 	case VK_MENU:
 	case VK_SHIFT:
+		//{
+		//	TCHAR szError[I4C3D_BUFFER_SIZE];
+		//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Alt‚ª%s [%s]"), GetKeyState(VK_MENU) < 0 ? _T("DOWN"):_T("UP"), szKey);
+		//	I4C3DMisc::LogDebugMessage(szError);
+		//}
 		VMVirtualKeyDown(hTargetWnd, vKey);
 		break;
 
