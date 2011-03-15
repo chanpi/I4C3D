@@ -166,7 +166,9 @@ void I4C3DControl::HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand)
 			GetWindowInfo(m_hTargetParentWnd, &wi);
 			if (wi.dwWindowStatus) {
 				I4C3DMisc::LogDebugMessage(_T("Active ^^"));
+
 				VKPush(m_hTargetParentWnd, it->second);
+				Sleep(50);
 
 			} else {
 				// リトライ
@@ -181,9 +183,6 @@ void I4C3DControl::HotkeyExecute(HWND hTargetWnd, LPCTSTR szCommand)
 				//	VKPush(m_hTargetParentWnd, it->second);
 				//}
 			}
-
-			//SetForegroundWindow(hTargetWnd);
-			//VKPush(hTargetWnd, it->second);
 			break;
 		}
 		it++;
@@ -296,6 +295,8 @@ void I4C3DControl::CreateSettingMap(LPCTSTR szSectionName) {
 	free(szReturnedString);
 }
 
+#define TIME_WAIT	50
+
 void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 	LPCTSTR pType = _tcschr(szKeyTypes, _T('+'));
 	TCHAR szKey[I4C3D_BUFFER_SIZE] = {0};
@@ -304,6 +305,7 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 	} else {
 		lstrcpy(szKey, szKeyTypes);
 	}
+	CharUpper(szKey);
 	I4C3DMisc::RemoveWhiteSpace(szKey);
 	UINT vKey = VMGetVirtualKey(szKey);
 
@@ -314,7 +316,13 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 		//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("Ctrlが%s Altが%s[%s]"), GetKeyState(VK_CONTROL) < 0 ? _T("DOWN"):_T("UP"), GetKeyState(VK_MENU) < 0 ? _T("DOWN"):_T("UP"), szKey);
 		//	I4C3DMisc::LogDebugMessage(szError);
 		//}
-		VMKeyDown(hTargetWnd, szKey[0]);
+
+		VMVirtualKeyDown(hTargetWnd, szKey[0]);
+
+		//VMKeyDown(hTargetWnd, szKey[0]);
+		//PostMessage(hTargetWnd, WM_KEYDOWN, szKey[0], MAKELPARAM(0x0001, MapVirtualKey(szKey[0], 0)));
+		////SendMessage(hTargetWnd, WM_KEYDOWN, szKey[0], MAKELPARAM(0x0001, MapVirtualKey(szKey[0], 0)));
+		//Sleep(TIME_WAIT);
 		break;
 
 	case VK_CONTROL:
@@ -326,10 +334,16 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 		//	I4C3DMisc::LogDebugMessage(szError);
 		//}
 		VMVirtualKeyDown(hTargetWnd, vKey);
+		//Sleep(TIME_WAIT);
 		break;
 
 	default:
-		VMKeyDown(hTargetWnd, vKey);
+		//VMKeyDown(hTargetWnd, vKey);
+		VMVirtualKeyDown(hTargetWnd, vKey);
+
+		//PostMessage(hTargetWnd, WM_KEYDOWN, vKey, MAKELPARAM(0x0001, MapVirtualKey(vKey, 0)));
+		////SendMessage(hTargetWnd, WM_KEYDOWN, vKey, MAKELPARAM(0x0001, MapVirtualKey(vKey, 0)));
+		//Sleep(TIME_WAIT);
 	}
 
 	// 再帰的に次のキー入力
@@ -339,17 +353,24 @@ void VKPush(HWND hTargetWnd, LPCTSTR szKeyTypes) {
 
 	switch (vKey) {
 	case 0:
-		VMKeyUp(hTargetWnd, szKey[0]);
+		//VMKeyUp(hTargetWnd, szKey[0]);
+		VMVirtualKeyUp(hTargetWnd, szKey[0]);
+		////SendMessage(hTargetWnd, WM_KEYUP, szKey[0], 0);
+		//PostMessage(hTargetWnd, WM_KEYUP, szKey[0], 0);
 		break;
 
 	case VK_CONTROL:
 	case VK_MENU:
 	case VK_SHIFT:
 		VMVirtualKeyUp(hTargetWnd, vKey);
+		//Sleep(TIME_WAIT);
 		break;
 
 	default:
-		VMKeyUp(hTargetWnd, vKey);
+		//VMKeyUp(hTargetWnd, vKey);
+		VMVirtualKeyUp(hTargetWnd, vKey);
+		////SendMessage(hTargetWnd, WM_KEYUP, vKey, 0);
+		//PostMessage(hTargetWnd, WM_KEYUP, vKey, 0);
 	}
 }
 

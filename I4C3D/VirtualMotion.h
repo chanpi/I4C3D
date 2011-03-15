@@ -1,6 +1,8 @@
 #ifndef _VIRTUAL_MOTION_
 #define _VIRTUAL_MOTION_
 
+#include <Windows.h>
+
 typedef enum {
 	LButtonDrag,
 	MButtonDrag,
@@ -21,6 +23,7 @@ extern "C" {
 #endif
 
 	// 仮想キーを押す
+	// アルファベットキーを押す/離す場合は、uVirtualKeyに大文字を指定してください。
 	__declspec(dllexport) UINT VMVirtualKeyDown(HWND hTargetWnd, UINT uVirtualKey);
 	__declspec(dllexport) UINT VMVirtualKeyUp(HWND hTargetWnd, UINT uVirtualKey);
 
@@ -28,6 +31,7 @@ extern "C" {
 	__declspec(dllexport) UINT VMGetVirtualKey(LPCTSTR szKey);
 
 	// 仮想キー以外を押す
+	// アルファベットキーを押す/離す場合は、uKeyに大文字を指定してください。
 	__declspec(dllexport) void VMKeyDown(HWND hTargetWnd, UINT uKey);
 	__declspec(dllexport) void VMKeyUp(HWND hTargetWnd, UINT uKey);
 	

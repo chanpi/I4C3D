@@ -10,6 +10,7 @@ extern TCHAR g_szIniFilePath[MAX_PATH];
 
 static BOOL CALLBACK EnumWindowProc(HWND hWnd, LPARAM lParam);
 static HWND g_targetWindow = NULL;
+static CRITICAL_SECTION g_CriticalSection;
 
 static unsigned __stdcall I4C3DReceiveThreadProc(void* pParam);
 static unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam);
@@ -24,11 +25,13 @@ typedef struct {
 I4C3DCore::I4C3DCore(void)
 {
 	m_started = FALSE;
+	InitializeCriticalSection(&g_CriticalSection);
 }
 
 
 I4C3DCore::~I4C3DCore(void)
 {
+	DeleteCriticalSection(&g_CriticalSection);
 }
 
 BOOL I4C3DCore::Start(I4C3DContext* pContext) {
@@ -316,27 +319,24 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 			}
 
 			if (events.lNetworkEvents & FD_CLOSE) {
-				//I4C3DMisc::LogDebugMessage(_T("クライアントがcloseしました。"));
 				break;
 
 			} else if (events.lNetworkEvents & FD_READ) {
-				{
-					_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("FD_READ: %d"), events.iErrorCode[FD_READ_BIT]);
-					I4C3DMisc::LogDebugMessage(szError);
-				}
+				WSAResetEvent(hEvent);
+
+				EnterCriticalSection(&g_CriticalSection);
+
 				nBytes = recv(pChildContext->clientSocket, recvBuffer + totalRecvBytes, sizeof(recvBuffer) - totalRecvBytes, 0);
 
 				if (nBytes == SOCKET_ERROR) {
 					_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("[ERROR] recv : %d"), WSAGetLastError());
 					I4C3DMisc::ReportError(szError);
+
+					LeaveCriticalSection(&g_CriticalSection);
 					break;
 
 				} else if (nBytes > 0) {
 					LPCSTR pTermination = (LPCSTR)memchr(recvBuffer+totalRecvBytes, pChildContext->cTermination, nBytes);
-					//{
-					//	_stprintf_s(szError, sizeof(szError)/sizeof(szError[0]), _T("total:[%d -> %d] bytes [%d]"), totalRecvBytes, totalRecvBytes + nBytes, pTermination - recvBuffer);
-					//	I4C3DMisc::LogDebugMessage(szError);
-					//}
 					totalRecvBytes += nBytes;
 
 					// 終端文字が見つからない場合、バッファをクリア
@@ -345,8 +345,8 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 							FillMemory(recvBuffer, sizeof(recvBuffer), 0xFF);
 							totalRecvBytes = 0;
 						}
-						ResetEvent(hEvent);
 						I4C3DMisc::LogDebugMessage(_T("continue..."));
+						LeaveCriticalSection(&g_CriticalSection);
 						continue;
 					}
 
@@ -361,7 +361,6 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 						} else {
 							MoveMemory(szCommand, recvBuffer, pTermination-recvBuffer);
 							szCommand[pTermination-recvBuffer] = '\0';
-							I4C3DMisc::LogDebugMessageA(szCommand);
 							SendMessage(pChildContext->pContext->hMyWnd, WM_BRIDGEMESSAGE, (WPARAM)&delta, (LPARAM)szCommand);
 							szCommand[pTermination-recvBuffer] = 0xFF;
 						}
@@ -395,15 +394,13 @@ unsigned __stdcall I4C3DAcceptedThreadProc(void* pParam)
 						}
 
 					} while ((pTermination = (LPCSTR)memchr(recvBuffer, pChildContext->cTermination, totalRecvBytes)) != NULL);
-					//I4C3DMisc::LogDebugMessage(_T("解析終了。"));
 				}
+
+				LeaveCriticalSection(&g_CriticalSection);
 			}
 
-			ResetEvent(hEvent);
-			I4C3DMisc::LogDebugMessage(_T("--- RESET ---"));
 		} else if (dwResult - WSA_WAIT_EVENT_0 == 1) {
 			// pChildContext->pContext->hStopEvent に終了イベントがセットされた
-			I4C3DMisc::LogDebugMessage(_T("Closeが指定されました。"));
 			break;
 		}
 	}
